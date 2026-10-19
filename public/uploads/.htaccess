@@ -1,0 +1,5 @@
+# Interdit l'exécution de scripts dans les fichiers téléversés (Apache).
+<FilesMatch "\.(php|phtml|phar|php\d)$">
+    Require all denied
+</FilesMatch>
+php_flag engine off

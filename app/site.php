@@ -1,0 +1,268 @@
+<?php
+declare(strict_types=1);
+
+const STATUS_FILTERS = ['ongoing', 'upcoming', 'completed'];
+// Anciennes valeurs françaises des filtres (liens déjà partagés).
+const LEGACY_STATUS = ['en-cours' => 'ongoing', 'a-venir' => 'upcoming', 'acheves' => 'completed'];
+
+function route_public(string $path): void
+{
+    $segments = $path === '' ? [] : explode('/', $path);
+
+    // Langue : /fr/… = français ; sans préfixe = anglais (par défaut).
+    $lang = DEFAULT_LANG;
+    if ($segments && isset(LANGS[$segments[0]]) && $segments[0] !== DEFAULT_LANG) {
+        $lang = array_shift($segments);
+    } elseif ($segments && $segments[0] === DEFAULT_LANG) {
+        array_shift($segments);
+        redirect(url(implode('/', $segments)) . query_suffix());
+    }
+    set_lang($lang);
+
+    $slug = $segments[0] ?? '';
+    $sub = $segments[1] ?? null;
+    if (count($segments) > 2) {
+        page_not_found();
+        return;
+    }
+
+    foreach (ROUTES as $name => $paths) {
+        if ($paths[$lang] === $slug) {
+            if ($sub !== null && $name !== 'projects') {
+                break;
+            }
+            dispatch_page($name, $sub);
+            return;
+        }
+        // Adresse d'une autre langue (ex. /a-propos sans /fr) : redirection permanente vers la bonne.
+        foreach ($paths as $otherLang => $otherSlug) {
+            if ($otherLang !== $lang && $otherSlug === $slug && $slug !== '') {
+                header('Location: ' . route_url($name, ['lang' => $otherLang, 'slug' => $sub]) . query_suffix(), true, 301);
+                exit;
+            }
+        }
+    }
+    page_not_found();
+}
+
+function query_suffix(): string
+{
+    $qs = (string) ($_SERVER['QUERY_STRING'] ?? '');
+    return $qs === '' ? '' : '?' . $qs;
+}
+
+function dispatch_page(string $name, ?string $sub): void
+{
+    $GLOBALS['current_route'] = ['name' => $name, 'slug' => $sub];
+    if ($name === 'projects' && $sub !== null) {
+        preg_match('/^[a-z0-9-]+$/', $sub) ? page_project($sub) : page_not_found();
+        return;
+    }
+    match ($name) {
+        'home'         => page_home(),
+        'about'        => page_about(),
+        'projects'     => page_projects(),
+        'give'         => page_give(),
+        'testimonials' => page_testimonials(),
+        'donors'       => page_donors(),
+        'contact'      => page_contact(),
+    };
+}
+
+function published_projects(?string $status = null, int $limit = 0, bool $featuredFirst = false): array
+{
+    $sql = 'SELECT * FROM projects WHERE is_published = 1';
+    $params = [];
+    if ($status) {
+        $sql .= ' AND status = ?';
+        $params[] = $status;
+    }
+    $sql .= ' ORDER BY ' . ($featuredFirst ? 'is_featured DESC, ' : '') . 'sort_order ASC, id DESC';
+    if ($limit > 0) {
+        $sql .= ' LIMIT ' . $limit;
+    }
+    return fetch_all($sql, $params);
+}
+
+function site_stats(): array
+{
+    $byStatus = [];
+    foreach (fetch_all('SELECT status, COUNT(*) n FROM projects WHERE is_published = 1 GROUP BY status') as $r) {
+        $byStatus[$r['status']] = (int) $r['n'];
+    }
+    return [
+        'completed' => $byStatus['completed'] ?? 0,
+        'ongoing'   => $byStatus['ongoing'] ?? 0,
+        'upcoming'  => $byStatus['upcoming'] ?? 0,
+        'donors'    => (int) fetch_value('SELECT COUNT(*) FROM donors WHERE is_published = 1'),
+        'raised'    => (float) fetch_value('SELECT COALESCE(SUM(raised_amount), 0) FROM projects WHERE is_published = 1'),
+    ];
+}
+
+function page_home(): void
+{
+    render_page('home', [
+        'nav'          => 'home',
+        'stats'        => site_stats(),
+        'featured'     => published_projects('ongoing', 1, true) ?: published_projects(null, 1, true),
+        'projects'     => published_projects(null, 8, true),
+        'testimonials' => fetch_all('SELECT * FROM testimonials WHERE is_published = 1 ORDER BY sort_order, id DESC LIMIT 6'),
+        'donors'       => fetch_all('SELECT * FROM donors WHERE is_published = 1 ORDER BY sort_order, id DESC LIMIT 24'),
+    ]);
+}
+
+function page_about(): void
+{
+    render_page('about', [
+        'nav' => 'about', 'pageTitle' => __('À propos de nous'),
+        'metaDescription' => excerpt(setting_t('about_intro'), 160),
+        'stats' => site_stats(),
+    ]);
+}
+
+function page_projects(): void
+{
+    $status = (string) ($_GET['status'] ?? '');
+    $status = LEGACY_STATUS[$_GET['statut'] ?? ''] ?? $status;
+    $current = in_array($status, STATUS_FILTERS, true) ? $status : null;
+    render_page('projects', [
+        'nav' => 'projects', 'pageTitle' => __('Nos projets'),
+        'metaDescription' => __('Découvrez les projets de construction et d\'équipement de l\'UAZ : achevés, en cours et à venir.'),
+        'projects' => published_projects($current),
+        'filter' => $current ?? '',
+        'counts' => site_stats(),
+    ]);
+}
+
+function page_project(string $slug): void
+{
+    $project = fetch_one('SELECT * FROM projects WHERE slug = ? AND is_published = 1', [$slug]);
+    if (!$project) {
+        page_not_found();
+        return;
+    }
+    render_page('project', [
+        'nav' => 'projects', 'pageTitle' => loc($project, 'title'),
+        'metaDescription' => excerpt(loc($project, 'summary') ?: loc($project, 'description'), 160),
+        'ogImage' => $project['cover_image'],
+        'project' => $project,
+        'images' => fetch_all('SELECT * FROM project_images WHERE project_id = ? ORDER BY sort_order, id', [$project['id']]),
+        'donors' => fetch_all('SELECT * FROM donors WHERE project_id = ? AND is_published = 1 ORDER BY sort_order, id DESC', [$project['id']]),
+        'others' => fetch_all('SELECT * FROM projects WHERE is_published = 1 AND id <> ? AND status <> ? ORDER BY is_featured DESC, sort_order LIMIT 3', [$project['id'], 'completed']),
+    ]);
+}
+
+function page_give(): void
+{
+    if (is_post()) {
+        handle_message_form('pledge', route_url('give', ['hash' => 'promesse']));
+    }
+    render_page('give', [
+        'nav' => 'give', 'pageTitle' => __('Comment donner'),
+        'metaDescription' => __('Virement bancaire, Mobile Money, parrainage d\'étudiants : découvrez comment soutenir l\'Université Adventiste Zurcher.'),
+        'methods' => fetch_all('SELECT * FROM donation_methods WHERE is_published = 1 ORDER BY sort_order, id'),
+        'projectOptions' => fetch_all("SELECT id, title, title_en, slug FROM projects WHERE is_published = 1 AND status <> 'completed' ORDER BY sort_order, title"),
+        'selected' => (string) ($_GET['project'] ?? $_GET['projet'] ?? ''),
+    ]);
+}
+
+function page_testimonials(): void
+{
+    render_page('testimonials', [
+        'nav' => 'testimonials', 'pageTitle' => __('Témoignages'),
+        'metaDescription' => __('Ils ont étudié à l\'UAZ grâce à la générosité de donateurs : découvrez leurs témoignages.'),
+        'testimonials' => fetch_all('SELECT * FROM testimonials WHERE is_published = 1 ORDER BY sort_order, id DESC'),
+    ]);
+}
+
+function page_donors(): void
+{
+    $donors = fetch_all('SELECT d.*, p.title AS project_title, p.title_en AS project_title_en, p.slug AS project_slug FROM donors d
+        LEFT JOIN projects p ON p.id = d.project_id WHERE d.is_published = 1 ORDER BY d.sort_order, d.id DESC');
+    $groups = [];
+    foreach ($donors as $d) {
+        $groups[$d['donor_type']][] = $d;
+    }
+    render_page('donors', [
+        'nav' => 'donors', 'pageTitle' => __('Nos donateurs'),
+        'metaDescription' => __('Merci à tous les donateurs qui soutiennent l\'Université Adventiste Zurcher.'),
+        'groups' => $groups, 'total' => count($donors),
+    ]);
+}
+
+function page_contact(): void
+{
+    if (is_post()) {
+        handle_message_form('contact', route_url('contact', ['hash' => 'formulaire']));
+    }
+    render_page('contact', [
+        'nav' => 'contact', 'pageTitle' => __('Contact'),
+        'metaDescription' => __('Contactez l\'Université Adventiste Zurcher pour toute question sur les dons et les projets.'),
+    ]);
+}
+
+function page_not_found(): void
+{
+    http_response_code(404);
+    render_page('404', ['pageTitle' => __('Page introuvable')]);
+}
+
+/** Traite le formulaire de contact ou de promesse de don, puis redirige (PRG). */
+function handle_message_form(string $kind, string $back): never
+{
+    csrf_verify();
+    $in = fn (string $k, int $max = 190) => mb_substr(trim((string) ($_POST[$k] ?? '')), 0, $max);
+    $data = [
+        'name' => $in('name', 150), 'email' => $in('email'), 'phone' => $in('phone', 50),
+        'country' => $in('country', 100), 'subject' => $in('subject', 255), 'method' => $in('method'),
+        'body' => $in('body', 5000), 'amount' => $in('amount', 30), 'project_id' => $in('project_id', 10),
+    ];
+    $_SESSION['_old'] = $data;
+
+    // Pot de miel anti-robots : ce champ invisible doit rester vide.
+    if (($_POST['website'] ?? '') !== '') {
+        redirect($back);
+    }
+    $errors = [];
+    if ($data['name'] === '') {
+        $errors[] = __('Indiquez votre nom.');
+    }
+    if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+        $errors[] = __('Indiquez une adresse e-mail valide.');
+    }
+    if ($kind === 'contact' && mb_strlen($data['body']) < 5) {
+        $errors[] = __('Écrivez votre message.');
+    }
+    $digits = preg_replace('/\D/', '', preg_replace('/[.,]\d{1,2}$/', '', $data['amount']));
+    $amount = $digits === '' ? null : (float) $digits;
+    $projectId = ctype_digit($data['project_id'])
+        ? (fetch_value('SELECT id FROM projects WHERE id = ?', [(int) $data['project_id']]) ?: null)
+        : null;
+    $recent = (int) fetch_value('SELECT COUNT(*) FROM messages WHERE ip = ? AND created_at > ?', [client_ip(), date('Y-m-d H:i:s', time() - 3600)]);
+    if ($recent >= 5) {
+        $errors[] = __('Trop d\'envois depuis votre connexion. Merci de réessayer plus tard.');
+    }
+    if ($errors) {
+        foreach ($errors as $err) {
+            flash('error', $err);
+        }
+        redirect($back);
+    }
+
+    q('INSERT INTO messages (kind, name, email, phone, country, subject, project_id, amount, method, body, ip, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        $kind, $data['name'], $data['email'], $data['phone'] ?: null, $data['country'] ?: null,
+        $data['subject'] ?: null, $projectId, $amount, $data['method'] ?: null, $data['body'] ?: null, client_ip(), now(),
+    ]);
+    clear_old();
+
+    $label = $kind === 'pledge' ? 'Nouvelle promesse de don' : 'Nouveau message de contact';
+    notify_admin($label . ' — ' . $data['name'], "Nom : {$data['name']}\nE-mail : {$data['email']}\nTéléphone : {$data['phone']}\n"
+        . 'Langue du site : ' . LANGS[lang()] . "\n"
+        . ($amount ? 'Montant : ' . money($amount) . "\n" : '') . "\n{$data['body']}\n\n" . absolute_url('admin/?p=messages'));
+
+    flash('success', $kind === 'pledge'
+        ? __('Merci pour votre générosité ! Nous avons bien reçu votre promesse de don et vous contacterons rapidement.')
+        : __('Merci ! Votre message a bien été envoyé. Nous vous répondrons dans les meilleurs délais.'));
+    redirect($back);
+}

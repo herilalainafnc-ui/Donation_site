@@ -1,0 +1,6 @@
+# Uniquement si le VPS utilise Apache au lieu de Nginx (DocumentRoot = dossier public/).
+Options -Indexes
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L,QSA]
