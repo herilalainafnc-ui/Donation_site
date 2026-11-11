@@ -15,6 +15,17 @@ function admin_field(string $name, array $def, mixed $value): string
     $cls = 'field' . (!empty($def['half']) ? ' half' : '');
 
     switch ($type) {
+        case 'heading':
+            return '<div class="field form-heading"><h3>' . e($def['label']) . '</h3>' . $help . '</div>';
+        case 'file':
+            $input = '';
+            if ($value) {
+                $input .= '<div class="image-current"><a class="file-chip" href="' . e(media((string) $value)) . '" target="_blank" rel="noopener">📄 Voir le PDF actuel</a>'
+                    . '<label class="remove"><input type="checkbox" name="' . $name . '_remove" value="1"> Supprimer ce fichier</label></div>';
+            }
+            $input .= '<input id="' . $id . '" type="file" name="' . $name . '" accept="application/pdf">';
+            $help .= '<small class="help">PDF uniquement — 10 Mo maximum.</small>';
+            break;
         case 'textarea':
             $input = '<textarea id="' . $id . '" name="' . $name . '" rows="' . (int) ($def['rows'] ?? 4) . '"' . $req . '>' . e($value) . '</textarea>';
             break;
@@ -69,6 +80,8 @@ function admin_cell(string $col, array $ent, array $row, array $options): string
     return match ($def['type']) {
         'image' => $v ? '<img class="thumb" src="' . e(media($v)) . '" alt="">' : '<span class="thumb thumb-empty">' . icon($ent['icon'], 20) . '</span>',
         'checkbox' => $v ? '<span class="pill pill-ok">Oui</span>' : '<span class="pill">Non</span>',
+        'url' => $v ? '<span class="pill pill-ok">Oui</span>' : '<span class="pill">—</span>',
+        'file' => $v ? '<a href="' . e(media($v)) . '" target="_blank" rel="noopener">PDF</a>' : '—',
         'money' => $v !== null ? e(money($v)) : '—',
         'select' => $col === 'status'
             ? '<span class="pill pill-' . e($v) . '">' . e($options[$col][$v] ?? $v) . '</span>'

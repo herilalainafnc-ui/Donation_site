@@ -212,7 +212,7 @@ function admin_crud(string $key, array $ent, string $a): void
             foreach ($ent['fields'] as $name => $def) {
                 if ($def['type'] === 'checkbox') {
                     $old[$name] = isset($old[$name]) ? 1 : 0;
-                } elseif ($def['type'] === 'image') {
+                } elseif (in_array($def['type'], ['image', 'file'], true)) {
                     unset($old[$name]);
                 }
             }
@@ -276,6 +276,9 @@ function crud_save(string $key, array $ent, int $id): never
     foreach ($ent['fields'] as $name => $def) {
         $label = $def['label'];
         $raw = $_POST[$name] ?? null;
+        if ($def['type'] === 'heading') {
+            continue;
+        }
         switch ($def['type']) {
             case 'checkbox':
                 $data[$name] = isset($_POST[$name]) ? 1 : 0;
@@ -283,6 +286,22 @@ function crud_save(string $key, array $ent, int $id): never
             case 'image':
                 try {
                     $up = upload_image($_FILES[$name] ?? null, $def['dir']);
+                } catch (RuntimeException $ex) {
+                    $errors[] = "$label : " . $ex->getMessage();
+                    break;
+                }
+                if ($up) {
+                    $data[$name] = $up;
+                    $newUploads[] = $up;
+                    $oldFiles[] = $row[$name] ?? null;
+                } elseif (!empty($_POST[$name . '_remove'])) {
+                    $data[$name] = null;
+                    $oldFiles[] = $row[$name] ?? null;
+                }
+                break;
+            case 'file':
+                try {
+                    $up = upload_document($_FILES[$name] ?? null, $def['dir']);
                 } catch (RuntimeException $ex) {
                     $errors[] = "$label : " . $ex->getMessage();
                     break;
@@ -338,6 +357,9 @@ function crud_save(string $key, array $ent, int $id): never
                 break;
             default:
                 $v = trim((string) $raw);
+                if (!empty($def['uppercase'])) {
+                    $v = mb_strtoupper(preg_replace('/\s+/', '-', $v));
+                }
                 $data[$name] = $v === '' ? null : $v;
         }
         if (!empty($def['required']) && trim((string) ($data[$name] ?? '')) === '') {
@@ -353,6 +375,12 @@ function crud_save(string $key, array $ent, int $id): never
                 $slug = $base . '-' . $i;
             }
             $data[$name] = $slug;
+        }
+    }
+
+    foreach ($ent['unique'] ?? [] as $col => $message) {
+        if (!empty($data[$col]) && fetch_value("SELECT COUNT(*) FROM $table WHERE $col = ? AND id <> ?", [$data[$col], $id])) {
+            $errors[] = $message;
         }
     }
 
@@ -379,6 +407,9 @@ function crud_save(string $key, array $ent, int $id): never
     }
     array_map('delete_upload', array_filter($oldFiles));
 
+    if ($table === 'projects' && empty($data['code'])) {
+        q('UPDATE projects SET code = ? WHERE id = ?', [default_project_code($id), $id]);
+    }
     if (!empty($ent['gallery'])) {
         save_gallery($id);
     }
@@ -419,7 +450,7 @@ function crud_delete(string $key, array $ent, int $id): never
     $row = fetch_one("SELECT * FROM {$ent['table']} WHERE id = ?", [$id]);
     if ($row) {
         foreach ($ent['fields'] as $name => $def) {
-            if ($def['type'] === 'image') {
+            if (in_array($def['type'], ['image', 'file'], true)) {
                 delete_upload($row[$name]);
             }
         }

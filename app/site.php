@@ -21,23 +21,23 @@ function route_public(string $path): void
 
     $slug = $segments[0] ?? '';
     $sub = $segments[1] ?? null;
-    if (count($segments) > 2) {
+    $third = $segments[2] ?? null;
+    // Seule la fiche de suivi d'un projet a un 3e segment : /projects/{slug}/report.
+    $report = $third !== null && in_array($third, REPORT_SEGMENT, true);
+    if (count($segments) > 3 || ($third !== null && !$report)) {
         page_not_found();
         return;
     }
 
     foreach (ROUTES as $name => $paths) {
         if ($paths[$lang] === $slug) {
-            if ($sub !== null && $name !== 'projects') {
-                break;
-            }
-            dispatch_page($name, $sub);
+            dispatch_page($name, $sub, $report);
             return;
         }
         // Adresse d'une autre langue (ex. /a-propos sans /fr) : redirection permanente vers la bonne.
         foreach ($paths as $otherLang => $otherSlug) {
             if ($otherLang !== $lang && $otherSlug === $slug && $slug !== '') {
-                header('Location: ' . route_url($name, ['lang' => $otherLang, 'slug' => $sub]) . query_suffix(), true, 301);
+                header('Location: ' . route_url($name, ['lang' => $otherLang, 'slug' => $sub, 'report' => $report]) . query_suffix(), true, 301);
                 exit;
             }
         }
@@ -51,11 +51,29 @@ function query_suffix(): string
     return $qs === '' ? '' : '?' . $qs;
 }
 
-function dispatch_page(string $name, ?string $sub): void
+function dispatch_page(string $name, ?string $sub, bool $report = false): void
 {
-    $GLOBALS['current_route'] = ['name' => $name, 'slug' => $sub];
-    if ($name === 'projects' && $sub !== null) {
-        preg_match('/^[a-z0-9-]+$/', $sub) ? page_project($sub) : page_not_found();
+    $GLOBALS['current_route'] = ['name' => $name, 'slug' => $sub, 'report' => $report];
+    // Pages de détail : /projects/{slug}[/report], /donors/{id}, /how-to-give/{id}
+    if ($sub !== null) {
+        $ok = match ($name) {
+            'projects' => preg_match('/^[a-z0-9-]+$/', $sub) === 1,
+            'donors', 'give' => ctype_digit($sub) && !$report,
+            default => false,
+        };
+        if (!$ok) {
+            page_not_found();
+            return;
+        }
+        match ($name) {
+            'projects' => $report ? page_project_report($sub) : page_project($sub),
+            'donors'   => page_donor((int) $sub),
+            'give'     => page_method((int) $sub),
+        };
+        return;
+    }
+    if ($report) {
+        page_not_found();
         return;
     }
     match ($name) {
@@ -134,22 +152,128 @@ function page_projects(): void
     ]);
 }
 
+/** Chiffres du tableau de bord d'un projet (financement et calendrier). */
+function project_dashboard(array $p, int $donorCount): array
+{
+    $goal = (float) $p['goal_amount'];
+    $raised = (float) $p['raised_amount'];
+    $d = [
+        'goal' => $goal,
+        'raised' => $raised,
+        'missing' => max(0, $goal - $raised),
+        'pct' => percent($raised, $goal),
+        'donors' => $donorCount,
+        'time_pct' => null,
+        'days_left' => null,
+    ];
+    if ($p['start_date'] && $p['end_date']) {
+        $start = strtotime($p['start_date']);
+        $end = strtotime($p['end_date']);
+        if ($start && $end && $end > $start) {
+            $d['time_pct'] = (int) max(0, min(100, round((time() - $start) / ($end - $start) * 100)));
+            $d['days_left'] = (int) max(0, ceil(($end - time()) / 86400));
+        }
+    }
+    return $d;
+}
+
+function load_published_project(string $slug): ?array
+{
+    return fetch_one('SELECT * FROM projects WHERE slug = ? AND is_published = 1', [$slug]);
+}
+
+function project_donors(int $projectId): array
+{
+    return fetch_all('SELECT * FROM donors WHERE project_id = ? AND is_published = 1 ORDER BY sort_order, id DESC', [$projectId]);
+}
+
 function page_project(string $slug): void
 {
-    $project = fetch_one('SELECT * FROM projects WHERE slug = ? AND is_published = 1', [$slug]);
+    $project = load_published_project($slug);
     if (!$project) {
         page_not_found();
         return;
     }
+    $donors = project_donors((int) $project['id']);
     render_page('project', [
         'nav' => 'projects', 'pageTitle' => loc($project, 'title'),
         'metaDescription' => excerpt(loc($project, 'summary') ?: loc($project, 'description'), 160),
         'ogImage' => $project['cover_image'],
         'project' => $project,
+        'dash' => project_dashboard($project, count($donors)),
         'images' => fetch_all('SELECT * FROM project_images WHERE project_id = ? ORDER BY sort_order, id', [$project['id']]),
-        'donors' => fetch_all('SELECT * FROM donors WHERE project_id = ? AND is_published = 1 ORDER BY sort_order, id DESC', [$project['id']]),
+        'donors' => $donors,
         'others' => fetch_all('SELECT * FROM projects WHERE is_published = 1 AND id <> ? AND status <> ? ORDER BY is_featured DESC, sort_order LIMIT 3', [$project['id'], 'completed']),
     ]);
+}
+
+/** Fiche de suivi : le PDF déposé dans l'admin s'il existe, sinon une fiche générée (téléchargeable en PDF). */
+function page_project_report(string $slug): void
+{
+    $project = load_published_project($slug);
+    if (!$project) {
+        page_not_found();
+        return;
+    }
+    if ($project['report_file'] && is_file(PUBLIC_DIR . '/' . $project['report_file'])) {
+        $name = 'fiche-de-suivi-' . slugify((string) $project['code'] ?: $project['slug']) . '.pdf';
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $name . '"');
+        header('Content-Length: ' . filesize(PUBLIC_DIR . '/' . $project['report_file']));
+        readfile(PUBLIC_DIR . '/' . $project['report_file']);
+        exit;
+    }
+    $donors = project_donors((int) $project['id']);
+    header('X-Robots-Tag: noindex');
+    view('report', [
+        'p' => $project,
+        'dash' => project_dashboard($project, count($donors)),
+        'donors' => $donors,
+        'autoDownload' => isset($_GET['download']),
+    ]);
+}
+
+function page_donor(int $id): void
+{
+    $donor = fetch_one('SELECT d.*, p.title AS project_title, p.title_en AS project_title_en, p.slug AS project_slug, p.code AS project_code,
+        p.status AS project_status, p.cover_image AS project_cover, p.goal_amount AS project_goal, p.raised_amount AS project_raised
+        FROM donors d LEFT JOIN projects p ON p.id = d.project_id AND p.is_published = 1 WHERE d.id = ? AND d.is_published = 1', [$id]);
+    if (!$donor) {
+        page_not_found();
+        return;
+    }
+    render_page('donor', [
+        'nav' => 'donors', 'pageTitle' => donor_name($donor),
+        'metaDescription' => __('Merci à :name pour son soutien à l\'Université Adventiste Zurcher.', ['name' => donor_name($donor)]),
+        'ogImage' => empty($donor['mask_name']) ? $donor['logo'] : null,
+        'd' => $donor,
+    ]);
+}
+
+function page_method(int $id): void
+{
+    $method = fetch_one('SELECT * FROM donation_methods WHERE id = ? AND is_published = 1', [$id]);
+    if (!$method) {
+        page_not_found();
+        return;
+    }
+    if (is_post()) {
+        handle_message_form('pledge', route_url('give', ['slug' => $id, 'hash' => 'promesse']));
+    }
+    render_page('method', [
+        'nav' => 'give', 'pageTitle' => loc($method, 'title'),
+        'metaDescription' => excerpt(loc($method, 'description'), 160),
+        'ogImage' => $method['logo'],
+        'm' => $method,
+        'others' => fetch_all('SELECT * FROM donation_methods WHERE is_published = 1 AND id <> ? ORDER BY sort_order, id', [$id]),
+        'projectOptions' => give_project_options(),
+        'selected' => (string) ($_GET['project'] ?? ''),
+    ]);
+}
+
+function give_project_options(): array
+{
+    return fetch_all("SELECT id, title, title_en, slug, code FROM projects WHERE is_published = 1 AND status <> 'completed' ORDER BY sort_order, title");
 }
 
 function page_give(): void
@@ -161,7 +285,7 @@ function page_give(): void
         'nav' => 'give', 'pageTitle' => __('Comment donner'),
         'metaDescription' => __('Virement bancaire, Mobile Money, parrainage d\'étudiants : découvrez comment soutenir l\'Université Adventiste Zurcher.'),
         'methods' => fetch_all('SELECT * FROM donation_methods WHERE is_published = 1 ORDER BY sort_order, id'),
-        'projectOptions' => fetch_all("SELECT id, title, title_en, slug FROM projects WHERE is_published = 1 AND status <> 'completed' ORDER BY sort_order, title"),
+        'projectOptions' => give_project_options(),
         'selected' => (string) ($_GET['project'] ?? $_GET['projet'] ?? ''),
     ]);
 }

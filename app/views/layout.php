@@ -83,9 +83,20 @@ $langSwitch = function (string $class) {
         </a>
         <nav class="main-nav" id="main-nav" aria-label="<?= e(__('Navigation principale')) ?>">
             <ul>
-                <?php foreach ($menu as $key => $label): if ($key === 'give') continue; ?>
+                <?php foreach (['home', 'projects', 'give', 'testimonials', 'donors'] as $key): $label = $menu[$key]; ?>
                     <li><a href="<?= route_url($key) ?>" <?= $nav === $key ? 'aria-current="page"' : '' ?>><span class="roll"><span data-hover="<?= e($label) ?>"><?= e($label) ?></span></span></a></li>
                 <?php endforeach; ?>
+                <?php $aboutOpen = in_array($nav, ['about', 'contact'], true); ?>
+                <li class="has-sub<?= $aboutOpen ? ' is-current' : '' ?>">
+                    <button type="button" class="sub-toggle" aria-expanded="false" aria-controls="sub-about">
+                        <span class="roll"><span data-hover="<?= e($menu['about']) ?>"><?= e($menu['about']) ?></span></span>
+                        <svg class="chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <ul class="sub-menu" id="sub-about">
+                        <li><a href="<?= route_url('about') ?>" <?= $nav === 'about' ? 'aria-current="page"' : '' ?>><?= icon('building', 18) ?> <?= e(__('À propos de nous')) ?></a></li>
+                        <li><a href="<?= route_url('contact') ?>" <?= $nav === 'contact' ? 'aria-current="page"' : '' ?>><?= icon('mail', 18) ?> <?= e($menu['contact']) ?></a></li>
+                    </ul>
+                </li>
             </ul>
             <a class="btn btn-gold btn-lg nav-cta" href="<?= route_url('give') ?>"><span><?= icon('heart', 20) ?> <?= e(__('Faire un don')) ?></span></a>
             <?= $langSwitch('lang-switch lang-switch-menu') ?>

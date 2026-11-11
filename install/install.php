@@ -59,6 +59,21 @@ $newColumns = [
     ['donation_methods', 'description_en', 'TEXT NULL', 'TEXT'],
     ['donation_methods', 'details_en', 'TEXT NULL', 'TEXT'],
     ['donors', 'message_en', 'TEXT NULL', 'TEXT'],
+    // Code projet et fiche de suivi (PDF facultatif)
+    ['projects', 'code', 'VARCHAR(30) NULL', 'TEXT'],
+    ['projects', 'report_file', 'VARCHAR(255) NULL', 'TEXT'],
+    // Coordonnées des donateurs (privées sauf si « afficher les coordonnées » est activé)
+    ['donors', 'email', 'VARCHAR(190) NULL', 'TEXT'],
+    ['donors', 'phone', 'VARCHAR(50) NULL', 'TEXT'],
+    ['donors', 'whatsapp', 'VARCHAR(50) NULL', 'TEXT'],
+    ['donors', 'show_contact', 'TINYINT(1) NOT NULL DEFAULT 0', 'INTEGER NOT NULL DEFAULT 0'],
+    // Moyens de don : logo, lien de paiement, instructions détaillées
+    ['donation_methods', 'logo', 'VARCHAR(255) NULL', 'TEXT'],
+    ['donation_methods', 'payment_url', 'VARCHAR(255) NULL', 'TEXT'],
+    ['donation_methods', 'payment_label', 'VARCHAR(100) NULL', 'TEXT'],
+    ['donation_methods', 'payment_label_en', 'VARCHAR(100) NULL', 'TEXT'],
+    ['donation_methods', 'instructions', 'TEXT NULL', 'TEXT'],
+    ['donation_methods', 'instructions_en', 'TEXT NULL', 'TEXT'],
 ];
 foreach ($newColumns as [$table, $column, $mysqlDef, $sqliteDef]) {
     try {
@@ -254,6 +269,11 @@ foreach ($demoEn as $table => [$keyCol, $rows]) {
             q("UPDATE $table SET $col = ? WHERE $keyCol = ? AND ($col IS NULL OR $col = '')", [$value, $key]);
         }
     }
+}
+
+// Code projet par défaut pour les projets qui n'en ont pas encore
+foreach (fetch_all("SELECT id FROM projects WHERE code IS NULL OR code = ''") as $p) {
+    q('UPDATE projects SET code = ? WHERE id = ?', [default_project_code((int) $p['id']), $p['id']]);
 }
 
 $hasAdmin = (int) fetch_value('SELECT COUNT(*) FROM admins');

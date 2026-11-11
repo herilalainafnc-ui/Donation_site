@@ -15,8 +15,8 @@
 
 <div class="panel table-panel">
     <?php
-    $titleCol = null;
-    foreach ($ent['list'] as $col => $_) {
+    $titleCol = $ent['title_column'] ?? null;
+    foreach ($titleCol ? [] : $ent['list'] as $col => $_) {
         if ($col !== 'icon' && ($ent['fields'][$col]['type'] ?? '') !== 'image') {
             $titleCol = $col;
             break;
@@ -42,7 +42,7 @@
                     <?php endforeach; ?>
                     <td class="actions-col">
                         <a class="btn btn-light btn-sm" href="<?= $editUrl ?>">Modifier</a>
-                        <?php if (!empty($ent['view_url'])): ?><a class="btn btn-light btn-sm" target="_blank" rel="noopener" href="<?= url(str_replace('{slug}', $r['slug'], $ent['view_url'])) ?>">Voir</a><?php endif; ?>
+                        <?php if (!empty($ent['view_url'])): ?><a class="btn btn-light btn-sm" target="_blank" rel="noopener" href="<?= url(str_replace(['{slug}', '{id}'], [$r['slug'] ?? '', $r['id']], $ent['view_url'])) ?>">Voir</a><?php endif; ?>
                         <form method="post" action="<?= admin_url($key, ['a' => 'delete', 'id' => $r['id']]) ?>" data-confirm="Supprimer définitivement cet élément ?">
                             <?= csrf_field() ?><button class="btn btn-danger btn-sm" type="submit">Supprimer</button>
                         </form>

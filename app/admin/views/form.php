@@ -33,7 +33,7 @@
         <button class="btn btn-primary" type="submit">Enregistrer</button>
         <a class="btn btn-light" href="<?= admin_url($key) ?>">Annuler</a>
         <?php if ($row && !empty($ent['view_url'])): ?>
-            <a class="btn btn-light" target="_blank" rel="noopener" href="<?= url(str_replace('{slug}', $row['slug'], $ent['view_url'])) ?>">Voir sur le site ↗</a>
+            <a class="btn btn-light" target="_blank" rel="noopener" href="<?= url(str_replace(['{slug}', '{id}'], [$row['slug'] ?? '', $row['id']], $ent['view_url'])) ?>">Voir sur le site ↗</a>
         <?php endif; ?>
     </div>
 </form>

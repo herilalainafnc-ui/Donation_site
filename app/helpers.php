@@ -12,6 +12,7 @@ const DONOR_TYPES = [
     'church'       => 'Église / District',
     'company'      => 'Entreprise',
     'organization' => 'Organisation / ONG',
+    'foundation'   => 'Fondation',
     'alumni'       => 'Ancien étudiant',
 ];
 
@@ -20,6 +21,7 @@ const DONOR_TYPES_PLURAL = [
     'church'       => 'Églises et districts',
     'company'      => 'Entreprises',
     'organization' => 'Organisations et ONG',
+    'foundation'   => 'Fondations',
     'alumni'       => 'Anciens étudiants',
 ];
 
@@ -263,6 +265,20 @@ function initials(string $name): string
     return $out;
 }
 
+/** Logo d'un moyen de paiement s'il existe, sinon son icône. */
+function method_visual(array $m, int $iconSize = 30): string
+{
+    return !empty($m['logo'])
+        ? '<img src="' . e(media($m['logo'])) . '" alt="" class="method-logo" loading="lazy">'
+        : icon((string) $m['icon'], $iconSize);
+}
+
+/** Code projet attribué automatiquement quand l'admin n'en saisit pas (ex. UAZ-P-007). */
+function default_project_code(int $id): string
+{
+    return sprintf('UAZ-P-%03d', $id);
+}
+
 /** Nom public d'un donateur : « Jea******* » si son nom est masqué. */
 function donor_name(array $d): string
 {
@@ -327,6 +343,8 @@ function icon(string $name, int $size = 24): string
         'phone'  => '<path d="M5 3h3l2 5-2.5 1.5a11 11 0 0 0 5 5L14 12l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/>',
         'calendar' => '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4m8-4v4"/>',
         'copy'   => '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
+        'download' => '<path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14"/>',
+        'print'  => '<path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v7H7z"/>',
         'check'  => '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
         'arrow'  => '<path d="M5 12h14m-6-6l6 6-6 6"/>',
         'quote'  => '<path d="M9 7H5a2 2 0 0 0-2 2v4h6V7zm0 6c0 3-1.5 4.5-4 5M21 7h-4a2 2 0 0 0-2 2v4h6V7zm0 6c0 3-1.5 4.5-4 5"/>',
@@ -442,6 +460,36 @@ function upload_image(?array $file, string $dir): ?string
         throw new RuntimeException('Impossible d\'enregistrer l\'image sur le serveur.');
     }
     resize_image($abs . '/' . $name, $info);
+    return $rel . '/' . $name;
+}
+
+/** Envoi d'un document PDF (fiche de suivi). Le type est vérifié sur le contenu, pas sur le nom. */
+function upload_document(?array $file, string $dir): ?string
+{
+    if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        throw new RuntimeException(in_array($file['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)
+            ? 'Fichier trop lourd pour le serveur.' : 'Échec du téléversement (code ' . $file['error'] . ').');
+    }
+    if ($file['size'] > 10 * 1024 * 1024) {
+        throw new RuntimeException('Fichier trop lourd (maximum 10 Mo).');
+    }
+    $head = (string) file_get_contents($file['tmp_name'], false, null, 0, 5);
+    if ($head !== '%PDF-') {
+        throw new RuntimeException('Seuls les fichiers PDF sont acceptés.');
+    }
+    $dir = preg_replace('/[^a-z0-9_-]/', '', $dir);
+    $rel = 'uploads/' . $dir . '/' . date('Y/m');
+    $abs = PUBLIC_DIR . '/' . $rel;
+    if (!is_dir($abs) && !mkdir($abs, 0755, true) && !is_dir($abs)) {
+        throw new RuntimeException('Impossible de créer le dossier ' . $rel . ' (droits d\'écriture ?).');
+    }
+    $name = bin2hex(random_bytes(12)) . '.pdf';
+    if (!move_uploaded_file($file['tmp_name'], $abs . '/' . $name)) {
+        throw new RuntimeException('Impossible d\'enregistrer le fichier sur le serveur.');
+    }
     return $rel . '/' . $name;
 }
 

@@ -30,8 +30,9 @@ Conventions de ce guide :
 
 1. **hPanel → VPS → Gérer** (votre serveur).
 2. **Système d'exploitation** : choisissez **Ubuntu 24.04 64 bits** (version « simple », *sans* panneau
-   de contrôle). Si le VPS est déjà installé avec autre chose et qu'il ne contient rien d'important,
-   utilisez **Système d'exploitation → Changer d'OS**.
+   de contrôle).
+   > ⚠️ **Si le VPS héberge déjà un site** (par exemple `zurcher.edu.mg`), **ne changez surtout pas
+   > d'OS** : cela efface tout le serveur. Gardez le système en place et passez directement à l'étape 2.
 3. Définissez un **mot de passe root** solide (gardez-le dans un gestionnaire de mots de passe).
 4. Notez l'**adresse IP** du VPS, visible dans **Aperçu**.
 5. (Recommandé) **Paramètres → Clés SSH** : ajoutez votre clé publique (voir encadré ci-dessous).
@@ -310,14 +311,18 @@ sudo nano /etc/nginx/sites-available/uaz-don
 Vérifiez la ligne `server_name don.zurcher.edu.mg;` (votre sous-domaine) et que `php8.3-fpm.sock`
 correspond bien à votre version de PHP (`ls /run/php/`).
 
-Activez le site et désactivez la page par défaut :
+Activez le site :
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/uaz-don /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl reload nginx
 ```
+
+> ⚠️ **Si le serveur héberge déjà d'autres sites** (par exemple le site principal `zurcher.edu.mg`) :
+> ne supprimez **aucun** fichier de `/etc/nginx/sites-enabled/`, et ne lancez jamais `systemctl reload`
+> si `nginx -t` signale une erreur. Le fichier `default` ne se supprime que sur un serveur neuf qui
+> n'héberge rien d'autre (`ls /etc/nginx/sites-enabled/` pour vérifier).
 
 `nginx -t` doit répondre *syntax is ok* et *test is successful*.
 

@@ -19,14 +19,8 @@ $hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
         </div>
 
         <div class="hero-visual">
-            <div class="seal-stage" data-mouse-parallax>
-                <span class="seal-ring seal-ring-1"></span>
-                <span class="seal-ring seal-ring-2"></span>
-                <svg class="seal-orbit" viewBox="0 0 400 400" aria-hidden="true">
-                    <defs><path id="orbit" d="M200,200 m-170,0 a170,170 0 1,1 340,0 a170,170 0 1,1 -340,0"/></defs>
-                    <text><textPath href="#orbit">SPIRITUS · MENS · MANUS · SERVICE · SPIRITUS · MENS · MANUS · SERVICE ·</textPath></text>
-                </svg>
-                <img class="seal-img" src="<?= e(site_logo()) ?>" alt="<?= e(__('Sceau de l\'Université Adventiste Zurcher')) ?>" width="320" height="327">
+            <div class="gift-stage" data-mouse-parallax>
+                <?= partial('hero_gifts') ?>
             </div>
             <?php if ($hp && (float) $hp['goal_amount'] > 0): ?>
                 <a class="hero-project glass" href="<?= route_url('projects', ['slug' => $hp['slug']]) ?>">
@@ -182,10 +176,10 @@ $hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
         <div class="marquee<?= $r ? ' reverse' : '' ?>">
             <div class="marquee-track">
                 <?php foreach ([false, true] as $copy): foreach ($row as $d): ?>
-                    <span class="marquee-item"<?= $copy ? ' aria-hidden="true"' : '' ?>>
+                    <a class="marquee-item" href="<?= route_url('donors', ['slug' => $d['id']]) ?>"<?= $copy ? ' aria-hidden="true" tabindex="-1"' : '' ?>>
                         <?php if ($d['logo'] && empty($d['mask_name'])): ?><img src="<?= e(media($d['logo'])) ?>" alt="" loading="lazy"><?php else: ?><span class="donor-initials"><?= e(donor_initials($d)) ?></span><?php endif; ?>
                         <span><strong><?= e(donor_name($d)) ?></strong><small><?= e(donor_type_label($d['donor_type'])) ?><?= $d['country'] ? ' · ' . e($d['country']) : '' ?></small></span>
-                    </span>
+                    </a>
                 <?php endforeach; endforeach; ?>
             </div>
         </div>

@@ -23,6 +23,9 @@ const ROUTES = [
     'contact'      => ['en' => 'contact', 'fr' => 'contact'],
 ];
 
+/** Dernier segment de l'adresse de la fiche de suivi d'un projet. */
+const REPORT_SEGMENT = ['en' => 'report', 'fr' => 'fiche-de-suivi'];
+
 function lang(): string
 {
     return $GLOBALS['lang'] ?? DEFAULT_LANG;
@@ -82,6 +85,9 @@ function route_url(string $name, array $opts = []): string
     $path = ROUTES[$name][$lang] ?? '';
     if (!empty($opts['slug'])) {
         $path .= '/' . $opts['slug'];
+        if (!empty($opts['report'])) {
+            $path .= '/' . REPORT_SEGMENT[$lang];
+        }
     }
     $prefix = $lang === DEFAULT_LANG ? '' : $lang . '/';
     $url = url(rtrim($prefix . $path, '/'));
@@ -99,7 +105,7 @@ function current_url_in(string $lang): string
 {
     $r = $GLOBALS['current_route'] ?? ['name' => 'home'];
     $query = array_intersect_key($_GET, array_flip(['status', 'project']));
-    return route_url($r['name'], ['slug' => $r['slug'] ?? null, 'query' => $query, 'lang' => $lang]);
+    return route_url($r['name'], ['slug' => $r['slug'] ?? null, 'report' => !empty($r['report']), 'query' => $query, 'lang' => $lang]);
 }
 
 /** Libellés traduits des statuts et types. */
@@ -111,4 +117,14 @@ function status_label(string $status): string
 function donor_type_label(string $type): string
 {
     return __(DONOR_TYPES[$type] ?? '');
+}
+
+/** Bouton principal d'un projet selon son statut. */
+function project_cta_label(string $status): string
+{
+    return match ($status) {
+        'ongoing'   => __('Voir l\'avancement'),
+        'completed' => __('Consulter le bilan'),
+        default     => __('En savoir plus'),
+    };
 }

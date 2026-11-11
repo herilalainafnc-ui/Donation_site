@@ -128,6 +128,18 @@
         document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && body.classList.contains('nav-open')) setMenu(false); });
     }
 
+    // Sous-menu « À propos » : survol sur ordinateur, clic (écrans tactiles) et clavier
+    $$('.has-sub').forEach(function (item) {
+        var btn = item.querySelector('.sub-toggle');
+        var set = function (open) {
+            item.classList.toggle('open', open);
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+        btn.addEventListener('click', function (ev) { ev.stopPropagation(); set(!item.classList.contains('open')); });
+        document.addEventListener('click', function (ev) { if (!item.contains(ev.target)) set(false); });
+        document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') set(false); });
+    });
+
     /* ------------------------------------------------------------------
        Transitions entre pages (rideau)
        ------------------------------------------------------------------ */
@@ -188,16 +200,19 @@
             gsap.to(hero.querySelectorAll('.aurora, .hero-seal'), { yPercent: 25, ease: 'none', scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: true } });
             var stage = hero.querySelector('[data-mouse-parallax]');
             if (stage) {
-                gsap.to(stage, { y: 120, rotate: 12, ease: 'none', scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: true } });
-                if (finePointer) {
-                    var sx = gsap.quickTo(stage.querySelector('.seal-img'), 'x', { duration: 1.2, ease: 'power3' });
-                    var sy = gsap.quickTo(stage.querySelector('.seal-img'), 'y', { duration: 1.2, ease: 'power3' });
-                    var ox = gsap.quickTo(stage.querySelector('.seal-orbit'), 'x', { duration: 1.6, ease: 'power3' });
-                    var oy = gsap.quickTo(stage.querySelector('.seal-orbit'), 'y', { duration: 1.6, ease: 'power3' });
+                gsap.to(stage, { y: 90, ease: 'none', scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: true } });
+                // Profondeur : les cadeaux suivent la souris, les cœurs et le diplôme dans l'autre sens
+                var front = stage.querySelector('.ga-front');
+                var back = stage.querySelector('.ga-back');
+                if (finePointer && front && back) {
+                    var fx = gsap.quickTo(front, 'x', { duration: 1.2, ease: 'power3' });
+                    var fy = gsap.quickTo(front, 'y', { duration: 1.2, ease: 'power3' });
+                    var bx = gsap.quickTo(back, 'x', { duration: 1.6, ease: 'power3' });
+                    var by = gsap.quickTo(back, 'y', { duration: 1.6, ease: 'power3' });
                     hero.addEventListener('mousemove', function (ev) {
                         var dx = ev.clientX / window.innerWidth - .5;
                         var dy = ev.clientY / window.innerHeight - .5;
-                        sx(dx * 40); sy(dy * 40); ox(dx * -20); oy(dy * -20);
+                        fx(dx * 24); fy(dy * 18); bx(dx * -30); by(dy * -22);
                     });
                 }
             }
@@ -243,6 +258,14 @@
             var obj = { v: 0 };
             el.textContent = '0';
             gsap.to(obj, { v: target, duration: 2.2, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 90%' }, onUpdate: function () { el.textContent = Math.round(obj.v).toLocaleString(root.lang || 'en'); } });
+        });
+
+        // --- Anneau de progression du tableau de bord d'un projet
+        $$('.ring-fill').forEach(function (ring) {
+            gsap.fromTo(ring, { attr: { 'stroke-dashoffset': ring.getAttribute('data-circ') } }, {
+                attr: { 'stroke-dashoffset': ring.getAttribute('stroke-dashoffset') },
+                duration: 2.2, ease: 'power3.out', scrollTrigger: { trigger: ring, start: 'top 90%' }
+            });
         });
 
         // --- Barres de financement

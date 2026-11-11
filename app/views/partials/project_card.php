@@ -10,7 +10,10 @@
         <?php if (!empty($n)): ?><span class="card-num"><?= str_pad((string) $n, 2, '0', STR_PAD_LEFT) ?></span><?php endif; ?>
     </a>
     <div class="project-body">
-        <?php if (loc($p, 'location') !== ''): ?><p class="meta"><?= icon('pin', 15) ?> <?= e(loc($p, 'location')) ?></p><?php endif; ?>
+        <p class="meta">
+            <?php if (!empty($p['code'])): ?><span class="code-tag"><?= e($p['code']) ?></span><?php endif; ?>
+            <?php if (loc($p, 'location') !== ''): ?><span><?= icon('pin', 15) ?> <?= e(loc($p, 'location')) ?></span><?php endif; ?>
+        </p>
         <h3><a href="<?= $pUrl ?>"><?= e(loc($p, 'title')) ?></a></h3>
         <p class="excerpt"><?= e(excerpt(loc($p, 'summary') ?: loc($p, 'description'), 120)) ?></p>
         <?php if ((float) $p['goal_amount'] > 0): ?>
@@ -23,7 +26,7 @@
             </div>
         <?php endif; ?>
         <div class="card-actions">
-            <a class="link-arrow" href="<?= $pUrl ?>"><?= e(__('Découvrir')) ?> <?= icon('arrow', 18) ?></a>
+            <a class="link-arrow" href="<?= $pUrl ?>"><?= e(project_cta_label($p['status'])) ?> <?= icon('arrow', 18) ?></a>
             <?php if ($p['status'] !== 'completed'): ?>
                 <a class="btn btn-gold btn-sm" href="<?= route_url('give', ['query' => ['project' => $p['slug']], 'hash' => 'promesse']) ?>"><span><?= e(__('Soutenir')) ?></span></a>
             <?php endif; ?>
