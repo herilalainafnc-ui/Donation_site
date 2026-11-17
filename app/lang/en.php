@@ -277,6 +277,7 @@ return [
     'Comment l\'Université Adventiste Zurcher collecte, utilise et protège vos données sur son site de dons.' => 'How Zurcher Adventist University collects, uses and protects your data on its giving website.',
     'Conditions générales d\'utilisation du site de dons de l\'Université Adventiste Zurcher.' => 'Terms of use of the Zurcher Adventist University giving website.',
     'Gérer les cookies' => 'Manage cookies',
+    'Choisir la langue' => 'Choose language',
     'Photo de :name' => 'Photo of :name',
     'Merci de vérifier vos informations puis de renvoyer le formulaire.' => 'Please check your details and send the form again.',
     'Indiquez un numéro de téléphone valide (chiffres, espaces et + uniquement).' => 'Enter a valid phone number (digits, spaces and + only).',

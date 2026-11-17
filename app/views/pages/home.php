@@ -19,9 +19,6 @@ $hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
         </div>
 
         <div class="hero-visual">
-            <div class="gift-stage" data-mouse-parallax>
-                <?= partial('hero_gifts') ?>
-            </div>
             <?php if ($hp && (float) $hp['goal_amount'] > 0): ?>
                 <a class="hero-project glass" href="<?= route_url('projects', ['slug' => $hp['slug']]) ?>">
                     <span class="badge badge-<?= e($hp['status']) ?>"><?= e(status_label($hp['status'])) ?></span>

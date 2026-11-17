@@ -140,6 +140,30 @@
         document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') set(false); });
     });
 
+    // Menu des langues de l'en-tête : clic, Échap, clic à l'extérieur, flèches au clavier
+    $$('.lang-menu').forEach(function (menu) {
+        var btn = menu.querySelector('.lang-toggle');
+        var links = $$('.lang-list a', menu);
+        var set = function (open) {
+            menu.classList.toggle('open', open);
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+        btn.addEventListener('click', function (ev) {
+            ev.stopPropagation();
+            var open = !menu.classList.contains('open');
+            set(open);
+            if (open && links.length) (menu.querySelector('.lang-list a.is-active') || links[0]).focus();
+        });
+        document.addEventListener('click', function (ev) { if (!menu.contains(ev.target)) set(false); });
+        menu.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Escape') { set(false); btn.focus(); return; }
+            var i = links.indexOf(document.activeElement);
+            if (i < 0 || (ev.key !== 'ArrowDown' && ev.key !== 'ArrowUp')) return;
+            ev.preventDefault();
+            links[(i + (ev.key === 'ArrowDown' ? 1 : links.length - 1)) % links.length].focus();
+        });
+    });
+
     /* ------------------------------------------------------------------
        Transitions entre pages (rideau)
        ------------------------------------------------------------------ */
@@ -198,24 +222,6 @@
         if (hero) {
             gsap.to(hero.querySelector('[data-hero-text]'), { yPercent: -18, opacity: .25, ease: 'none', scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: true } });
             gsap.to(hero.querySelectorAll('.aurora, .hero-seal'), { yPercent: 25, ease: 'none', scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: true } });
-            var stage = hero.querySelector('[data-mouse-parallax]');
-            if (stage) {
-                gsap.to(stage, { y: 90, ease: 'none', scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: true } });
-                // Profondeur : les cadeaux suivent la souris, les cœurs et le diplôme dans l'autre sens
-                var front = stage.querySelector('.ga-front');
-                var back = stage.querySelector('.ga-back');
-                if (finePointer && front && back) {
-                    var fx = gsap.quickTo(front, 'x', { duration: 1.2, ease: 'power3' });
-                    var fy = gsap.quickTo(front, 'y', { duration: 1.2, ease: 'power3' });
-                    var bx = gsap.quickTo(back, 'x', { duration: 1.6, ease: 'power3' });
-                    var by = gsap.quickTo(back, 'y', { duration: 1.6, ease: 'power3' });
-                    hero.addEventListener('mousemove', function (ev) {
-                        var dx = ev.clientX / window.innerWidth - .5;
-                        var dy = ev.clientY / window.innerHeight - .5;
-                        fx(dx * 24); fy(dy * 18); bx(dx * -30); by(dy * -22);
-                    });
-                }
-            }
         }
 
         // --- Titres de section : mots qui montent à l'apparition

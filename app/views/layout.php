@@ -29,6 +29,21 @@ $langSwitch = function (string $class) {
     }
     return $html . '</div>';
 };
+// Sélecteur de langue de l'en-tête : icône de langue + petit menu déroulant
+$langMenu = function () {
+    $html = '<div class="lang-menu">'
+        . '<button type="button" class="lang-toggle" aria-expanded="false" aria-controls="lang-list" aria-label="' . e(__('Choisir la langue')) . ' (' . e(LANGS[lang()]) . ')">'
+        . icon('globe', 20) . '<span class="lang-code">' . strtoupper(lang()) . '</span>'
+        . '<svg class="chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        . '</button><ul class="lang-list" id="lang-list">';
+    foreach (LANGS as $code => $name) {
+        $active = $code === lang();
+        $html .= '<li><a href="' . e(current_url_in($code)) . '" hreflang="' . $code . '" lang="' . $code . '"'
+            . ($active ? ' aria-current="true" class="is-active"' : '') . '><span class="lang-badge">' . strtoupper($code) . '</span>' . e($name)
+            . ($active ? icon('check', 16) : '') . '</a></li>';
+    }
+    return $html . '</ul></div>';
+};
 ?><!doctype html>
 <html lang="<?= lang() ?>">
 <head>
@@ -117,9 +132,8 @@ $langSwitch = function (string $class) {
                 </li>
             </ul>
             <a class="btn btn-gold btn-lg nav-cta" href="<?= route_url('give') ?>"><span><?= icon('heart', 20) ?> <?= e(__('Faire un don')) ?></span></a>
-            <?= $langSwitch('lang-switch lang-switch-menu') ?>
         </nav>
-        <?= $langSwitch('lang-switch lang-switch-header') ?>
+        <?= $langMenu() ?>
         <a class="btn btn-gold header-cta magnetic" href="<?= route_url('give') ?>"><span><?= icon('heart', 18) ?> <?= e(__('Faire un don')) ?></span></a>
         <button class="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="<?= e(__('Ouvrir le menu')) ?>" data-label-open="<?= e(__('Ouvrir le menu')) ?>" data-label-close="<?= e(__('Fermer le menu')) ?>"><span></span><span></span></button>
     </div>
