@@ -4,7 +4,7 @@
     <div class="container center">
         <p class="hero-actions center-actions">
             <a class="btn btn-primary btn-lg" href="<?= route_url('home') ?>"><span><?= e(__('Retour à l\'accueil')) ?></span></a>
-            <a class="btn btn-gold btn-lg" href="<?= route_url('projects') ?>"><span><?= e(__('Voir les projets')) ?></span></a>
+            <a class="btn btn-outline btn-lg" href="<?= route_url('projects') ?>"><span><?= e(__('Voir les projets')) ?></span></a>
         </p>
     </div>
 </section>

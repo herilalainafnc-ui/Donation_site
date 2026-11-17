@@ -148,6 +148,13 @@ $defaults = [
     'give_after_en'    => 'After your gift, fill in the form below so that we can thank you, send you a receipt and assign your gift to the right project.',
     'office_hours_en'  => 'Monday to Thursday, 8 am – 5 pm; Friday, 8 am – 12 pm',
 ];
+// Pages légales et réglages de confidentialité / audience
+$defaults += require __DIR__ . '/legal_defaults.php';
+$defaults += [
+    'legal_updated' => date('Y-m-d'),
+    'ga_measurement_id' => '',
+    'og_image' => '',
+];
 foreach ($defaults as $k => $v) {
     if (!fetch_value('SELECT COUNT(*) FROM settings WHERE skey = ?', [$k])) {
         q('INSERT INTO settings (skey, svalue) VALUES (?, ?)', [$k, $v]);

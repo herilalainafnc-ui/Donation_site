@@ -114,3 +114,17 @@ CREATE TABLE IF NOT EXISTS messages (
     INDEX idx_messages_read (is_read, created_at),
     CONSTRAINT fk_messages_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Statistiques de fréquentation anonymes : un compteur par jour / page / langue / appareil / provenance.
+-- Aucune adresse IP ni aucun cookie.
+CREATE TABLE IF NOT EXISTS page_views (
+    id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    day      DATE NOT NULL,
+    path     VARCHAR(190) NOT NULL,
+    lang     VARCHAR(5) NOT NULL,
+    device   VARCHAR(10) NOT NULL,
+    referrer VARCHAR(120) NOT NULL DEFAULT '',
+    views    INT UNSIGNED NOT NULL DEFAULT 0,
+    UNIQUE KEY uq_page_views (day, path, lang, device, referrer),
+    INDEX idx_page_views_day (day)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

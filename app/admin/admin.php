@@ -107,6 +107,7 @@ function admin_dispatch(): void
     }
     match ($p) {
         'dashboard' => admin_dashboard(),
+        'stats'     => admin_stats(),
         'settings'  => admin_settings(),
         'messages'  => admin_messages($a),
         'users'     => admin_users($a),
@@ -153,6 +154,38 @@ function admin_login(): void
     admin_render('login', ['error' => $error], false);
 }
 
+/* ---------- Statistiques de fréquentation ---------- */
+
+/** Pages vues sur une période (anonymes, sans cookie). */
+function admin_stats(): void
+{
+    $days = (int) ($_GET['d'] ?? 30);
+    $days = in_array($days, [7, 30, 90, 365], true) ? $days : 30;
+    $from = date('Y-m-d', strtotime('-' . ($days - 1) . ' days'));
+    $prevFrom = date('Y-m-d', strtotime('-' . (2 * $days - 1) . ' days'));
+    $sum = fn(string $where, array $p) => (int) fetch_value("SELECT COALESCE(SUM(views), 0) FROM page_views WHERE $where", $p);
+
+    $perDay = array_fill_keys(array_map(fn($i) => date('Y-m-d', strtotime("-$i days")), range($days - 1, 0)), 0);
+    foreach (fetch_all('SELECT day, SUM(views) n FROM page_views WHERE day >= ? GROUP BY day', [$from]) as $r) {
+        $perDay[substr((string) $r['day'], 0, 10)] = (int) $r['n'];
+    }
+    $group = fn(string $col, int $limit = 10) => fetch_all("SELECT $col AS label, SUM(views) n FROM page_views WHERE day >= ? GROUP BY $col ORDER BY n DESC LIMIT $limit", [$from]);
+
+    admin_render('stats', [
+        'title' => 'Statistiques',
+        'nav' => 'stats',
+        'days' => $days,
+        'total' => $sum('day >= ?', [$from]),
+        'previous' => $sum('day >= ? AND day < ?', [$prevFrom, $from]),
+        'today' => $sum('day = ?', [date('Y-m-d')]),
+        'perDay' => $perDay,
+        'pages' => $group('path', 15),
+        'referrers' => fetch_all("SELECT referrer AS label, SUM(views) n FROM page_views WHERE day >= ? AND referrer <> '' GROUP BY referrer ORDER BY n DESC LIMIT 10", [$from]),
+        'devices' => $group('device'),
+        'langs' => $group('lang'),
+    ]);
+}
+
 /* ---------- Tableau de bord ---------- */
 
 function admin_dashboard(): void
@@ -170,6 +203,7 @@ function admin_dashboard(): void
         'donors' => (int) fetch_value('SELECT COUNT(*) FROM donors'),
         'testimonials' => (int) fetch_value('SELECT COUNT(*) FROM testimonials'),
         'unread' => (int) fetch_value('SELECT COUNT(*) FROM messages WHERE is_read = 0'),
+        'views' => (int) fetch_value('SELECT COALESCE(SUM(views), 0) FROM page_views WHERE day >= ?', [date('Y-m-d', strtotime('-29 days'))]),
         'messages' => fetch_all('SELECT * FROM messages ORDER BY created_at DESC, id DESC LIMIT 6'),
         'projects' => fetch_all("SELECT * FROM projects WHERE status = 'ongoing' ORDER BY sort_order, id DESC LIMIT 5"),
     ]);

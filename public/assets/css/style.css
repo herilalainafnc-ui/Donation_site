@@ -835,3 +835,56 @@ html:not(.anim) .verse-text .wd { opacity: 1; }
     .header-inner { gap: 18px; }
     .header-cta { padding: 11px 16px; }
 }
+
+/* ---------- Pages légales ---------- */
+.legal-page .prose h3 { font-size: 1.3rem; }
+.legal-page .prose a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+.legal-updated { display: inline-block; margin: 0 0 28px; padding: 6px 14px; border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--accent-dark); font-size: .88rem; font-weight: 600; }
+.legal-switch { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--line); }
+
+/* ---------- Liens légaux du pied de page ---------- */
+.footer-legal { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+.footer-legal a, .link-btn { color: inherit; opacity: .8; transition: opacity .3s; }
+.footer-legal a:hover, .link-btn:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+.link-btn { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+
+/* ---------- Bandeau de consentement aux cookies ---------- */
+.cookie-banner { position: fixed; left: 20px; bottom: 20px; z-index: 120; display: flex; align-items: center; gap: 18px 24px; flex-wrap: wrap; max-width: min(620px, calc(100vw - 40px)); padding: 18px 22px; border-radius: var(--radius-lg); background: #fff; color: var(--ink); border: 1px solid var(--line); box-shadow: 0 24px 60px -20px rgba(11, 24, 52, .45); font-size: .9rem; line-height: 1.55; animation: toast-in .6s var(--ease) both; }
+.cookie-banner[hidden] { display: none; }
+.cookie-banner p { flex: 1 1 300px; margin: 0; color: var(--muted); }
+.cookie-banner p a { color: var(--primary); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.cookie-actions { display: flex; gap: 10px; flex-shrink: 0; }
+
+/* ---------- Barre « Faire un don » sur mobile (le bouton de l'en-tête y est masqué) ---------- */
+.mobile-give { display: none; }
+@media (max-width: 1024px) {
+    .mobile-give { position: fixed; left: 0; right: 0; bottom: 0; z-index: 95; display: block; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(255, 255, 255, .94); backdrop-filter: blur(10px); border-top: 1px solid var(--line); transform: translateY(110%); transition: transform .5s var(--ease); }
+    .mobile-give.is-visible { transform: none; }
+    .mobile-give .btn { width: 100%; }
+    body.has-mobile-give { padding-bottom: 72px; }
+    body.has-mobile-give .to-top { bottom: 86px; }
+    body.has-mobile-give .cookie-banner { bottom: 86px; }
+    .cookie-banner { left: 16px; right: 16px; max-width: none; }
+}
+
+/* ---------- Validation des formulaires ---------- */
+.field-error { display: block; margin-top: 6px; color: #b42318; font-size: .84rem; font-weight: 600; }
+[aria-invalid="true"] { border-color: #d92d20 !important; box-shadow: 0 0 0 3px rgba(217, 45, 32, .12) !important; }
+.form-note a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+button[aria-busy="true"] { opacity: .7; cursor: progress; }
+
+/* ---------- Contraste (WCAG AA) ----------
+   - Boutons dorés : dégradé sans teinte trop sombre sous le texte bleu nuit (≥ 4,9:1).
+   - Mots dorés des titres sur fond clair : or foncé (≥ 3,8:1, texte de grande taille) ;
+     l'or lumineux est réservé aux zones sombres.
+   - Initiales des témoignages : or clair sur bleu nuit (5,2:1) au lieu de blanc sur or. */
+:root {
+    --gold-btn: linear-gradient(115deg, #b8892e, #d4a94a 16%, #e8c66a 30%, #fff3c4 40%, #e2b95a 50%, #c39537 66%, #d9b25a 82%, #b8892e);
+    --gold-ink: linear-gradient(115deg, #7a5a12, #8e6a1c 30%, #a97b23 50%, #8e6a1c 70%, #7a5a12);
+}
+.btn-gold, .btn-accent { background-image: var(--gold-btn); }
+h1 strong, h2 strong, .display strong, .display-md strong, .is-split strong .w > span { background-image: var(--gold-ink); }
+[data-header="dark"] h1 strong, [data-header="dark"] h2 strong, [data-header="dark"] .display strong, [data-header="dark"] .display-md strong,
+[data-header="dark"] .is-split strong .w > span { background-image: var(--gold); }
+.avatar-initials { background: linear-gradient(140deg, #2a4a8a, #183060); color: #e8c66a; }
+.is-split strong, [data-header="dark"] .is-split strong { background: none; }

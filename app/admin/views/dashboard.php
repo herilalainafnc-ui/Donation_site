@@ -4,6 +4,7 @@
     <a class="kpi" href="<?= admin_url('projects', ['f' => 'completed']) ?>"><span class="kpi-icon"><?= icon('check') ?></span><div><strong><?= $byStatus['completed'] ?></strong><small>Projets achevés</small></div></a>
     <a class="kpi" href="<?= admin_url('donors') ?>"><span class="kpi-icon"><?= icon('users') ?></span><div><strong><?= $donors ?></strong><small>Donateurs</small></div></a>
     <a class="kpi <?= $unread ? 'kpi-alert' : '' ?>" href="<?= admin_url('messages') ?>"><span class="kpi-icon"><?= icon('mail') ?></span><div><strong><?= $unread ?></strong><small>Messages non lus</small></div></a>
+    <a class="kpi" href="<?= admin_url('stats') ?>"><span class="kpi-icon"><?= icon('chart') ?></span><div><strong><?= number_format($views, 0, ',', ' ') ?></strong><small>Pages vues (30 jours)</small></div></a>
 </div>
 
 <div class="grid-2">

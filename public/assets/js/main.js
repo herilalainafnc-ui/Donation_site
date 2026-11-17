@@ -406,7 +406,7 @@
     if (lb) {
         var img = lb.querySelector('img');
         var cap = lb.querySelector('figcaption');
-        var close = function () { lb.hidden = true; img.src = ''; if (lenis) lenis.start(); };
+        var close = function () { lb.hidden = true; img.removeAttribute('src'); if (lenis) lenis.start(); };
         $$('[data-lightbox]').forEach(function (a) {
             a.addEventListener('click', function (ev) {
                 ev.preventDefault();
@@ -422,3 +422,117 @@
         document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !lb.hidden) close(); });
     }
 })();
+
+/* ------------------------------------------------------------------
+   Consentement aux cookies (Google Analytics chargé seulement après accord)
+   et barre « Faire un don » sur mobile
+   ------------------------------------------------------------------ */
+(function () {
+    'use strict';
+    var banner = document.getElementById('cookie-banner');
+    var COOKIE = 'uaz_consent';
+    var read = function () { var m = document.cookie.match(/(?:^|;\s*)uaz_consent=(granted|denied)/); return m ? m[1] : null; };
+    var save = function (v) {
+        document.cookie = COOKIE + '=' + v + ';path=/;max-age=' + (60 * 60 * 24 * 182) + ';SameSite=Lax' + (location.protocol === 'https:' ? ';Secure' : '');
+    };
+    var gaLoaded = false;
+    var loadGa = function (id) {
+        if (gaLoaded || !id) return;
+        gaLoaded = true;
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () { window.dataLayer.push(arguments); };
+        window.gtag('js', new Date());
+        window.gtag('config', id, { anonymize_ip: true });
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(id);
+        document.head.appendChild(s);
+    };
+
+    if (banner) {
+        var ga = banner.getAttribute('data-ga');
+        var choice = read();
+        if (choice === 'granted') loadGa(ga);
+        if (!choice) banner.hidden = false;
+        banner.addEventListener('click', function (ev) {
+            var btn = ev.target.closest('[data-consent]');
+            if (!btn) return;
+            var v = btn.getAttribute('data-consent');
+            var before = read();
+            save(v);
+            banner.hidden = true;
+            if (v === 'granted') loadGa(ga);
+            // Retrait du consentement : on recharge pour ne plus exécuter Google Analytics
+            else if (before === 'granted' && gaLoaded) location.reload();
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-cookie-open]'), function (b) {
+            b.addEventListener('click', function () { banner.hidden = false; var f = banner.querySelector('button'); if (f) f.focus(); });
+        });
+    }
+
+    var bar = document.querySelector('[data-mobile-give]');
+    if (bar) {
+        document.body.classList.add('has-mobile-give');
+        var onScroll = function () { bar.classList.toggle('is-visible', window.scrollY > 320); };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+    }
+})();
+
+/* ------------------------------------------------------------------
+   Validation des formulaires : message clair sous chaque champ erroné
+   ------------------------------------------------------------------ */
+(function () {
+    'use strict';
+    Array.prototype.forEach.call(document.querySelectorAll('form[data-validate]'), function (form) {
+        var msg = {};
+        try { msg = JSON.parse(form.getAttribute('data-validate')) || {}; } catch (e) {}
+        var fields = form.querySelectorAll('input:not([type=hidden]):not([readonly]), textarea, select');
+
+        var messageFor = function (f) {
+            var v = f.validity;
+            if (v.valueMissing) return msg.required;
+            if (v.typeMismatch && f.type === 'email') return msg.email;
+            if (v.patternMismatch) return f.type === 'tel' ? msg.tel : (f.name === 'amount' ? msg.amount : msg.required);
+            if (v.tooShort) return msg.short;
+            return f.validationMessage;
+        };
+        var show = function (f) {
+            if (f.closest('.hp')) return true;
+            var label = f.closest('label') || f.parentNode;
+            var err = label.querySelector('.field-error');
+            var ok = f.checkValidity();
+            f.setAttribute('aria-invalid', ok ? 'false' : 'true');
+            if (ok) { if (err) err.remove(); return true; }
+            if (!err) {
+                err = document.createElement('span');
+                err.className = 'field-error';
+                err.id = 'err-' + Math.random().toString(36).slice(2, 9);
+                label.appendChild(err);
+                f.setAttribute('aria-describedby', err.id);
+            }
+            err.textContent = messageFor(f);
+            return false;
+        };
+
+        Array.prototype.forEach.call(fields, function (f) {
+            f.addEventListener('blur', function () { if (f.value !== '' || f.getAttribute('aria-invalid') === 'true') show(f); });
+            f.addEventListener('input', function () { if (f.getAttribute('aria-invalid') === 'true') show(f); });
+        });
+        form.addEventListener('submit', function (ev) {
+            var first = null;
+            Array.prototype.forEach.call(fields, function (f) { if (!show(f) && !first) first = f; });
+            if (first) {
+                ev.preventDefault();
+                first.focus();
+                return;
+            }
+            var btn = form.querySelector('button[type=submit]');
+            if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
+        });
+    });
+})();
+// Retour arrière (cache du navigateur) : réactive les boutons d'envoi
+window.addEventListener('pageshow', function () {
+    Array.prototype.forEach.call(document.querySelectorAll('form[data-validate] button[aria-busy]'), function (b) { b.disabled = false; b.removeAttribute('aria-busy'); });
+});

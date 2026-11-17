@@ -269,7 +269,7 @@ function initials(string $name): string
 function method_visual(array $m, int $iconSize = 30): string
 {
     return !empty($m['logo'])
-        ? '<img src="' . e(media($m['logo'])) . '" alt="" class="method-logo" loading="lazy">'
+        ? '<img src="' . e(media($m['logo'])) . '" alt="' . e(__('Logo :name', ['name' => loc($m, 'title')])) . '" class="method-logo" loading="lazy">'
         : icon((string) $m['icon'], $iconSize);
 }
 
@@ -326,6 +326,7 @@ function render_page(string $view, array $data = []): void
     view('pages/' . $view, $data);
     $data['content'] = ob_get_clean();
     view('layout', $data);
+    track_page_view();
 }
 
 function icon(string $name, int $size = 24): string
@@ -350,6 +351,7 @@ function icon(string $name, int $size = 24): string
         'quote'  => '<path d="M9 7H5a2 2 0 0 0-2 2v4h6V7zm0 6c0 3-1.5 4.5-4 5M21 7h-4a2 2 0 0 0-2 2v4h6V7zm0 6c0 3-1.5 4.5-4 5"/>',
         'building' => '<path d="M4 21V5l8-3 8 3v16M9 21v-5h6v5M8 8h2m4 0h2M8 12h2m4 0h2M2 21h20"/>',
         'users'  => '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>',
+        'chart'  => '<path d="M4 20V10m6 10V4m6 16v-7m4 7H2"/>',
         'target' => '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
         'facebook' => '<path d="M14 8h3V4h-3a4 4 0 0 0-4 4v2H7v4h3v7h4v-7h3l1-4h-4V8z"/>',
         'youtube'  => '<rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9l5 3-5 3z"/>',
@@ -508,16 +510,23 @@ function memory_limit_bytes(): int
     };
 }
 
-/** Réduit la largeur des images trop grandes (et supprime les métadonnées EXIF). */
+/**
+ * Optimise une image envoyée : réduit sa largeur si besoin, la ré-encode en qualité web (80)
+ * et supprime les métadonnées EXIF. La version ré-encodée n'est gardée que si elle est plus légère
+ * (ou si l'image a été redimensionnée).
+ */
 function resize_image(string $path, array $info): void
 {
     $maxW = (int) config('image_max_width', 1920);
     [$w, $h, $type] = $info;
-    if ($w <= $maxW || !function_exists('imagecreatetruecolor') || $type === IMAGETYPE_GIF) {
+    if (!function_exists('imagecreatetruecolor') || $type === IMAGETYPE_GIF) {
         return;
     }
+    $resize = $w > $maxW;
+    $nw = $resize ? $maxW : $w;
+    $nh = $resize ? (int) round($h * $maxW / $w) : $h;
     // Les photos d'appareil (24-48 Mpx) dépassent la limite mémoire par défaut (128 Mo) une fois décompressées.
-    $needed = (int) ($w * $h * 5 + $maxW * ($h * $maxW / $w) * 5) + 32 * 1024 * 1024;
+    $needed = (int) ($w * $h * 5 + $nw * $nh * 5) + 32 * 1024 * 1024;
     if ($needed > memory_limit_bytes()) {
         @ini_set('memory_limit', (string) max($needed, 256 * 1024 * 1024));
     }
@@ -530,18 +539,26 @@ function resize_image(string $path, array $info): void
     if (!$src) {
         return;
     }
-    $nh = (int) round($h * $maxW / $w);
-    $dst = imagecreatetruecolor($maxW, $nh);
+    $dst = imagecreatetruecolor($nw, $nh);
     if ($type !== IMAGETYPE_JPEG) {
         imagealphablending($dst, false);
         imagesavealpha($dst, true);
     }
-    imagecopyresampled($dst, $src, 0, 0, 0, 0, $maxW, $nh, $w, $h);
-    match ($type) {
-        IMAGETYPE_JPEG => imagejpeg($dst, $path, 85),
-        IMAGETYPE_PNG  => imagepng($dst, $path, 6),
-        IMAGETYPE_WEBP => imagewebp($dst, $path, 85),
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+    if ($type === IMAGETYPE_JPEG) {
+        imageinterlace($dst, true); // JPEG progressif : s'affiche plus vite sur les connexions lentes
+    }
+    $tmp = $path . '.tmp';
+    $ok = match ($type) {
+        IMAGETYPE_JPEG => imagejpeg($dst, $tmp, 80),
+        IMAGETYPE_PNG  => imagepng($dst, $tmp, 9),
+        IMAGETYPE_WEBP => imagewebp($dst, $tmp, 80),
     };
+    if ($ok && is_file($tmp) && ($resize || filesize($tmp) < filesize($path))) {
+        rename($tmp, $path);
+    } elseif (is_file($tmp)) {
+        unlink($tmp);
+    }
 }
 
 function delete_upload(?string $rel): void
@@ -601,4 +618,86 @@ function notify_admin(string $subject, string $body): void
     }
     $headers = 'From: ' . config('mail_from', 'no-reply@localhost') . "\r\nContent-Type: text/plain; charset=UTF-8";
     @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers);
+}
+
+/* ---------- Statistiques de fréquentation anonymes ---------- */
+
+/**
+ * Compte une page vue sans cookie ni adresse IP : seuls la page, la langue, le type d'appareil
+ * et le site de provenance sont gardés, regroupés par jour. Robots, administrateurs connectés
+ * et visiteurs qui refusent le suivi (Do Not Track / GPC) ne sont pas comptés.
+ */
+function track_page_view(): void
+{
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET' || http_response_code() !== 200) {
+        return;
+    }
+    $ua = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
+    if ($ua === '' || preg_match('/bot|crawl|spider|slurp|facebookexternalhit|preview|monitor|curl|wget|python|headless|lighthouse|pingdom|uptime|checker/i', $ua)
+        || ($_SERVER['HTTP_DNT'] ?? '') === '1' || ($_SERVER['HTTP_SEC_GPC'] ?? '') === '1'
+        || ($_SERVER['HTTP_PURPOSE'] ?? $_SERVER['HTTP_SEC_PURPOSE'] ?? '') !== '' // préchargements
+        || !empty($_SESSION['admin_id'])) {
+        return;
+    }
+    $path = '/' . trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+    $base = base_path();
+    if ($base !== '' && str_starts_with($path, $base)) {
+        $path = '/' . ltrim(substr($path, strlen($base)), '/');
+    }
+    $device = preg_match('/iPad|Tablet/i', $ua) ? 'tablet' : (preg_match('/Mobi|Android|iPhone/i', $ua) ? 'mobile' : 'desktop');
+    $ref = (string) parse_url((string) ($_SERVER['HTTP_REFERER'] ?? ''), PHP_URL_HOST);
+    $ref = preg_replace('/^www\./', '', strtolower($ref));
+    if ($ref === preg_replace('/^www\./', '', strtolower((string) parse_url('//' . ($_SERVER['HTTP_HOST'] ?? ''), PHP_URL_HOST)))) {
+        $ref = '';
+    }
+    $key = [date('Y-m-d'), mb_substr($path, 0, 190), lang(), $device, mb_substr($ref, 0, 120)];
+    try {
+        $st = q('UPDATE page_views SET views = views + 1 WHERE day = ? AND path = ? AND lang = ? AND device = ? AND referrer = ?', $key);
+        if ($st->rowCount() === 0) {
+            q('INSERT INTO page_views (day, path, lang, device, referrer, views) VALUES (?, ?, ?, ?, ?, 1)', $key);
+        }
+    } catch (Throwable) {
+        // La mesure d'audience ne doit jamais empêcher l'affichage d'une page.
+    }
+}
+
+/* ---------- Anti-spam des formulaires publics ---------- */
+
+/** Champ caché horodaté et signé : un robot qui envoie le formulaire en moins de 3 secondes est écarté. */
+function form_time_field(): string
+{
+    $t = (string) time();
+    return '<input type="hidden" name="_t" value="' . $t . '.' . hash_hmac('sha256', $t, csrf_token()) . '">';
+}
+
+/** Vrai si le formulaire a été rempli par un humain (délai plausible, signature valide). */
+function form_time_ok(int $minSeconds = 3, int $maxSeconds = 86400): bool
+{
+    [$t, $sig] = array_pad(explode('.', (string) ($_POST['_t'] ?? ''), 2), 2, '');
+    if (!ctype_digit($t) || !hash_equals(hash_hmac('sha256', $t, csrf_token()), $sig)) {
+        return false;
+    }
+    $age = time() - (int) $t;
+    return $age >= $minSeconds && $age <= $maxSeconds;
+}
+
+/** Repère les contenus typiques du spam : trop de liens, balises HTML, BBCode. */
+function looks_like_spam(string ...$texts): bool
+{
+    $all = implode("\n", $texts);
+    return preg_match_all('#https?://|www\.#i', $all) > 2
+        || preg_match('#<a\s|\[url[=\]]|\[link[=\]]#i', $all) === 1;
+}
+
+/** Messages de validation des formulaires (traduits) lus par main.js : attribut data-validate. */
+function form_validate_attr(): string
+{
+    return 'data-validate="' . e(json_encode([
+        'required' => __('Ce champ est obligatoire.'),
+        'email' => __('Indiquez une adresse e-mail valide.'),
+        'tel' => __('Indiquez un numéro de téléphone valide (chiffres, espaces et + uniquement).'),
+        'amount' => __('Indiquez un montant valide, en chiffres (ex. 100 000).'),
+        'short' => __('Ce champ est trop court.'),
+        'summary' => __('Merci de corriger les champs signalés.'),
+    ], JSON_UNESCAPED_UNICODE)) . '"';
 }

@@ -3,7 +3,7 @@
     <blockquote><?= nl2br(e(loc($t, 'quote'))) ?></blockquote>
     <figcaption>
         <?php if ($t['photo']): ?>
-            <img src="<?= e(media($t['photo'])) ?>" alt="" class="avatar" loading="lazy">
+            <img src="<?= e(media($t['photo'])) ?>" alt="<?= e(__('Photo de :name', ['name' => $t['name']])) ?>" class="avatar" loading="lazy">
         <?php else: ?>
             <span class="avatar avatar-initials"><?= e(initials($t['name'])) ?></span>
         <?php endif; ?>

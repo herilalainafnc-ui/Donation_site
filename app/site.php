@@ -7,6 +7,15 @@ const LEGACY_STATUS = ['en-cours' => 'ongoing', 'a-venir' => 'upcoming', 'acheve
 
 function route_public(string $path): void
 {
+    // Fichiers techniques générés : sitemap et robots
+    if ($path === 'sitemap.xml') {
+        serve_sitemap();
+        return;
+    }
+    if ($path === 'robots.txt') {
+        serve_robots();
+        return;
+    }
     $segments = $path === '' ? [] : explode('/', $path);
 
     // Langue : /fr/… = français ; sans préfixe = anglais (par défaut).
@@ -84,6 +93,8 @@ function dispatch_page(string $name, ?string $sub, bool $report = false): void
         'testimonials' => page_testimonials(),
         'donors'       => page_donors(),
         'contact'      => page_contact(),
+        'privacy'      => page_legal('privacy'),
+        'terms'        => page_legal('terms'),
     };
 }
 
@@ -314,6 +325,18 @@ function page_donors(): void
     ]);
 }
 
+function page_legal(string $which): void
+{
+    render_page('legal', [
+        'nav' => $which,
+        'pageTitle' => $which === 'privacy' ? __('Politique de confidentialité') : __('Conditions générales'),
+        'metaDescription' => $which === 'privacy'
+            ? __('Comment l\'Université Adventiste Zurcher collecte, utilise et protège vos données sur son site de dons.')
+            : __('Conditions générales d\'utilisation du site de dons de l\'Université Adventiste Zurcher.'),
+        'which' => $which,
+    ]);
+}
+
 function page_contact(): void
 {
     if (is_post()) {
@@ -328,7 +351,7 @@ function page_contact(): void
 function page_not_found(): void
 {
     http_response_code(404);
-    render_page('404', ['pageTitle' => __('Page introuvable')]);
+    render_page('404', ['pageTitle' => __('Page introuvable'), 'noindex' => true]);
 }
 
 /** Traite le formulaire de contact ou de promesse de don, puis redirige (PRG). */
@@ -347,18 +370,36 @@ function handle_message_form(string $kind, string $back): never
     if (($_POST['website'] ?? '') !== '') {
         redirect($back);
     }
+    // Envoi trop rapide (robot) ou formulaire trop ancien : on demande de réessayer.
+    if (!form_time_ok()) {
+        flash('error', __('Merci de vérifier vos informations puis de renvoyer le formulaire.'));
+        redirect($back);
+    }
     $errors = [];
-    if ($data['name'] === '') {
+    if (mb_strlen($data['name']) < 2 || preg_match('#https?://|www\.|[<>]#i', $data['name'])) {
         $errors[] = __('Indiquez votre nom.');
     }
-    if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+    if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL) || !preg_match('/@[^@]+\.[a-z]{2,}$/i', $data['email'])) {
         $errors[] = __('Indiquez une adresse e-mail valide.');
+    }
+    if ($data['phone'] !== '' && !preg_match('/^\+?[0-9 ().\/-]{6,25}$/', $data['phone'])) {
+        $errors[] = __('Indiquez un numéro de téléphone valide (chiffres, espaces et + uniquement).');
     }
     if ($kind === 'contact' && mb_strlen($data['body']) < 5) {
         $errors[] = __('Écrivez votre message.');
     }
-    $digits = preg_replace('/\D/', '', preg_replace('/[.,]\d{1,2}$/', '', $data['amount']));
-    $amount = $digits === '' ? null : (float) $digits;
+    $amount = null;
+    if ($data['amount'] !== '') {
+        $digits = preg_replace('/\D/', '', preg_replace('/[.,]\d{1,2}$/', '', $data['amount']));
+        if ($digits === '' || !preg_match('/^[0-9 .,\x{00A0}\x{202F}]+$/u', $data['amount']) || strlen($digits) > 13 || (int) $digits <= 0) {
+            $errors[] = __('Indiquez un montant valide, en chiffres (ex. 100 000).');
+        } else {
+            $amount = (float) $digits;
+        }
+    }
+    if (looks_like_spam($data['body'], $data['subject'], $data['country'])) {
+        $errors[] = __('Votre message contient trop de liens. Retirez-les puis renvoyez-le.');
+    }
     $projectId = ctype_digit($data['project_id'])
         ? (fetch_value('SELECT id FROM projects WHERE id = ?', [(int) $data['project_id']]) ?: null)
         : null;
@@ -389,4 +430,56 @@ function handle_message_form(string $kind, string $back): never
         ? __('Merci pour votre générosité ! Nous avons bien reçu votre promesse de don et vous contacterons rapidement.')
         : __('Merci ! Votre message a bien été envoyé. Nous vous répondrons dans les meilleurs délais.'));
     redirect($back);
+}
+
+/* ---------- Référencement : sitemap.xml et robots.txt ---------- */
+
+/** Sitemap de toutes les pages publiques, dans les deux langues, avec leurs équivalents (hreflang). */
+function serve_sitemap(): never
+{
+    $site = rtrim((string) config('site_url', ''), '/');
+    $pages = [];
+    foreach (['home', 'projects', 'give', 'donors', 'testimonials', 'about', 'contact', 'privacy', 'terms'] as $name) {
+        $pages[] = ['name' => $name, 'slug' => null, 'lastmod' => null, 'priority' => $name === 'home' ? '1.0' : (in_array($name, ['privacy', 'terms'], true) ? '0.3' : '0.8')];
+    }
+    foreach (fetch_all('SELECT slug, COALESCE(updated_at, created_at) AS d FROM projects WHERE is_published = 1') as $p) {
+        $pages[] = ['name' => 'projects', 'slug' => $p['slug'], 'lastmod' => substr((string) $p['d'], 0, 10), 'priority' => '0.9'];
+    }
+    foreach (fetch_all('SELECT id FROM donation_methods WHERE is_published = 1') as $m) {
+        $pages[] = ['name' => 'give', 'slug' => (string) $m['id'], 'lastmod' => null, 'priority' => '0.7'];
+    }
+    foreach (fetch_all('SELECT id FROM donors WHERE is_published = 1') as $d) {
+        $pages[] = ['name' => 'donors', 'slug' => (string) $d['id'], 'lastmod' => null, 'priority' => '0.4'];
+    }
+    header('Content-Type: application/xml; charset=UTF-8');
+    echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+    echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' . "\n";
+    foreach ($pages as $pg) {
+        foreach (array_keys(LANGS) as $lang) {
+            echo "  <url>\n    <loc>" . e($site . route_url($pg['name'], ['slug' => $pg['slug'], 'lang' => $lang])) . "</loc>\n";
+            foreach (array_keys(LANGS) as $alt) {
+                echo '    <xhtml:link rel="alternate" hreflang="' . $alt . '" href="' . e($site . route_url($pg['name'], ['slug' => $pg['slug'], 'lang' => $alt])) . "\"/>\n";
+            }
+            if ($pg['lastmod']) {
+                echo '    <lastmod>' . e($pg['lastmod']) . "</lastmod>\n";
+            }
+            echo '    <priority>' . $pg['priority'] . "</priority>\n  </url>\n";
+        }
+    }
+    echo "</urlset>\n";
+    exit;
+}
+
+function serve_robots(): never
+{
+    $site = rtrim((string) config('site_url', ''), '/');
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo "User-agent: *\n";
+    echo "Allow: /\n";
+    echo "Disallow: /admin/\n";
+    echo "Disallow: /*/report\n";
+    echo "Disallow: /*/fiche-de-suivi\n";
+    echo "Disallow: /*?project=\n";
+    echo "\nSitemap: {$site}/sitemap.xml\n";
+    exit;
 }

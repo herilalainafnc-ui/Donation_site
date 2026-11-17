@@ -1,9 +1,15 @@
 <?php
 $siteName = setting_t('site_name', 'Université Adventiste Zurcher');
 $short = setting('site_short', 'UAZ');
-$title = isset($pageTitle) ? $pageTitle . ' — ' . $short : $siteName . ' — ' . setting_t('tagline');
-$desc = $metaDescription ?? setting_t('meta_description');
-$og = !empty($ogImage) ? absolute_url($ogImage) : (setting('hero_image') ? absolute_url(setting('hero_image')) : absolute_url('assets/img/logo.png'));
+// Titre court (≈ 60 caractères max.) et description (≈ 155 caractères) pour Google et les réseaux sociaux
+$title = isset($pageTitle) ? $pageTitle . ' — ' . $short : $siteName . ' — ' . __('Campagne de dons');
+$desc = trim((string) ($metaDescription ?? '')) ?: setting_t('meta_description')
+    ?: __('Soutenez les projets de construction et d\'équipement de l\'Université Adventiste Zurcher à Madagascar : chaque don construit l\'avenir d\'un étudiant.');
+$desc = excerpt($desc, 160);
+$og = !empty($ogImage) ? absolute_url($ogImage) : (setting('og_image') ? absolute_url(setting('og_image')) : absolute_url('assets/img/og-image.jpg'));
+$siteUrl = rtrim((string) config('site_url', ''), '/');
+$canonical = $siteUrl . current_url_in(lang());
+$gaId = preg_match('/^G-[A-Z0-9]{4,15}$/', setting('ga_measurement_id')) ? setting('ga_measurement_id') : '';
 $nav ??= '';
 $menu = [
     'home' => __('Accueil'),
@@ -30,21 +36,33 @@ $langSwitch = function (string $class) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($title) ?></title>
     <meta name="description" content="<?= e($desc) ?>">
+    <link rel="canonical" href="<?= e($canonical) ?>">
+    <?php if (!empty($noindex)): ?><meta name="robots" content="noindex"><?php endif; ?>
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="<?= e($siteName) ?>">
+    <meta property="og:url" content="<?= e($canonical) ?>">
     <meta property="og:title" content="<?= e($title) ?>">
     <meta property="og:description" content="<?= e($desc) ?>">
     <meta property="og:image" content="<?= e($og) ?>">
+    <meta property="og:image:alt" content="<?= e($siteName) ?>">
     <meta property="og:locale" content="<?= lang() === 'fr' ? 'fr_FR' : 'en_US' ?>">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= e($title) ?>">
+    <meta name="twitter:description" content="<?= e($desc) ?>">
+    <meta name="twitter:image" content="<?= e($og) ?>">
     <?php foreach (LANGS as $code => $_): ?>
         <link rel="alternate" hreflang="<?= $code ?>" href="<?= e(rtrim((string) config('site_url', ''), '/') . current_url_in($code)) ?>">
     <?php endforeach; ?>
     <link rel="alternate" hreflang="x-default" href="<?= e(rtrim((string) config('site_url', ''), '/') . current_url_in(DEFAULT_LANG)) ?>">
     <meta name="theme-color" content="#0b1834">
-    <link rel="icon" type="image/png" href="<?= asset('img/favicon.png') ?>">
+    <link rel="icon" href="<?= url('favicon.ico') ?>" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= asset('img/favicon-32.png') ?>">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?= asset('img/icon-192.png') ?>">
     <link rel="apple-touch-icon" href="<?= asset('img/apple-touch-icon.png') ?>">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&family=Roboto+Slab:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="manifest" href="<?= url('site.webmanifest') ?>">
+    <link rel="preload" href="<?= url('assets/fonts/raleway-normal-latin.woff2') ?>" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="<?= url('assets/fonts/roboto-slab-normal-latin.woff2') ?>" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="<?= asset('css/fonts.css') ?>">
     <link rel="stylesheet" href="<?= asset('css/style.css') ?>">
     <script>
         // Animations activées seulement si le visiteur ne demande pas de réduire les mouvements.
@@ -75,7 +93,7 @@ $langSwitch = function (string $class) {
 <header class="site-header on-dark" id="top">
     <div class="header-inner">
         <a class="brand" href="<?= route_url('home') ?>" aria-label="<?= e($siteName) ?> — <?= e(__('accueil')) ?>">
-            <img src="<?= e(site_logo()) ?>" alt="" class="brand-logo" width="48" height="49">
+            <img src="<?= e(site_logo()) ?>" alt="<?= e(__('Sceau de l\'Université Adventiste Zurcher')) ?>" class="brand-logo" width="48" height="49">
             <span class="brand-text">
                 <strong><?= e($siteName) ?></strong>
                 <small><?= e(__('Campagne de dons')) ?></small>
@@ -130,7 +148,7 @@ $langSwitch = function (string $class) {
         <div class="footer-grid">
             <div>
                 <div class="brand brand-light">
-                    <img src="<?= e(site_logo()) ?>" alt="" class="footer-logo" width="64" height="65" loading="lazy">
+                    <img src="<?= e(site_logo()) ?>" alt="<?= e(__('Sceau de l\'Université Adventiste Zurcher')) ?>" class="footer-logo" width="64" height="65" loading="lazy">
                     <span class="brand-text"><strong><?= e($siteName) ?></strong><small><?= e(setting_t('tagline')) ?></small></span>
                 </div>
                 <div class="socials">
@@ -166,6 +184,11 @@ $langSwitch = function (string $class) {
         </div>
         <div class="footer-bottom">
             <span>© <?= date('Y') ?> <?= e($siteName) ?>. <?= e(__('Tous droits réservés.')) ?></span>
+            <nav class="footer-legal" aria-label="<?= e(__('Informations légales')) ?>">
+                <a href="<?= route_url('privacy') ?>"><?= e(__('Confidentialité')) ?></a>
+                <a href="<?= route_url('terms') ?>"><?= e(__('Conditions générales')) ?></a>
+                <button type="button" class="link-btn" data-cookie-open><?= e(__('Gérer les cookies')) ?></button>
+            </nav>
             <?= $langSwitch('lang-switch lang-switch-footer') ?>
         </div>
     </div>
@@ -173,9 +196,34 @@ $langSwitch = function (string $class) {
 
 <a href="#top" class="to-top" aria-label="<?= e(__('Revenir en haut de la page')) ?>"><?= icon('arrow', 20) ?></a>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
+<?php if ($nav !== 'give'): ?>
+<div class="mobile-give" data-mobile-give>
+    <a class="btn btn-gold" href="<?= route_url('give') ?>"><span><?= icon('heart', 18) ?> <?= e(__('Faire un don')) ?></span></a>
+</div>
+<?php endif; ?>
+
+<div class="cookie-banner" id="cookie-banner" role="region" aria-label="<?= e(__('Cookies')) ?>" data-ga="<?= e($gaId) ?>" hidden>
+    <p>
+        <?php if ($gaId): ?>
+            <?= e(__('Nous utilisons un cookie indispensable au fonctionnement du site et, avec votre accord, Google Analytics pour mesurer l\'audience.')) ?>
+        <?php else: ?>
+            <?= e(__('Ce site utilise uniquement un cookie indispensable à son fonctionnement. Les statistiques de visite sont anonymes et sans cookie.')) ?>
+        <?php endif; ?>
+        <a href="<?= route_url('privacy') ?>"><?= e(__('En savoir plus')) ?></a>
+    </p>
+    <div class="cookie-actions">
+        <?php if ($gaId): ?>
+            <button type="button" class="btn btn-outline btn-sm" data-consent="denied"><?= e(__('Refuser')) ?></button>
+            <button type="button" class="btn btn-primary btn-sm" data-consent="granted"><?= e(__('Accepter')) ?></button>
+        <?php else: ?>
+            <button type="button" class="btn btn-primary btn-sm" data-consent="denied"><?= e(__('J\'ai compris')) ?></button>
+        <?php endif; ?>
+    </div>
+</div>
+
+<script src="<?= asset('vendor/gsap.min.js') ?>" defer></script>
+<script src="<?= asset('vendor/ScrollTrigger.min.js') ?>" defer></script>
+<script src="<?= asset('vendor/lenis.min.js') ?>" defer></script>
 <script src="<?= asset('js/main.js') ?>" defer></script>
 </body>
 </html>

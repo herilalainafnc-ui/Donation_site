@@ -9,6 +9,7 @@ $menu = [
     'donors' => ['Donateurs', 'users'],
     'methods' => ['Moyens de don', 'bank'],
     'messages' => ['Messages', 'mail'],
+    'stats' => ['Statistiques', 'chart'],
     'settings' => ['Paramètres du site', 'globe'],
     'users' => ['Administrateurs', 'hand'],
 ];
@@ -21,9 +22,7 @@ $flashes = take_flashes();
     <meta name="robots" content="noindex, nofollow">
     <title><?= e($title ?? 'Administration') ?> — Admin <?= e(setting('site_short', 'UAZ')) ?></title>
     <link rel="icon" type="image/png" href="<?= asset('img/favicon.png') ?>">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600;700;800&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= asset("css/fonts.css") ?>">
     <link rel="stylesheet" href="<?= asset('css/admin.css') ?>">
 </head>
 <body>

@@ -45,7 +45,7 @@ $hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
                 <?php if (setting('about_image')): ?>
                     <img src="<?= e(media(setting('about_image'))) ?>" alt="<?= e(__('Campus de l\'Université Adventiste Zurcher')) ?>" loading="lazy">
                 <?php else: ?>
-                    <div class="media-placeholder"><img src="<?= e(site_logo()) ?>" alt="" class="placeholder-seal"></div>
+                    <div class="media-placeholder"><img src="<?= e(site_logo()) ?>" alt="" class="placeholder-seal" aria-hidden="true"></div>
                 <?php endif; ?>
             </div>
             <div class="about-side">
@@ -126,7 +126,7 @@ $hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
                 <figure class="t-slide<?= $i === 0 ? ' is-active' : '' ?>">
                     <blockquote><?= e(loc($t, 'quote')) ?></blockquote>
                     <figcaption>
-                        <?php if ($t['photo']): ?><img src="<?= e(media($t['photo'])) ?>" alt="" class="avatar" loading="lazy"><?php else: ?><span class="avatar avatar-initials"><?= e(initials($t['name'])) ?></span><?php endif; ?>
+                        <?php if ($t['photo']): ?><img src="<?= e(media($t['photo'])) ?>" alt="<?= e(__('Photo de :name', ['name' => $t['name']])) ?>" class="avatar" loading="lazy"><?php else: ?><span class="avatar avatar-initials"><?= e(initials($t['name'])) ?></span><?php endif; ?>
                         <span><strong><?= e($t['name']) ?></strong><?php if (loc($t, 'role') !== ''): ?><small><?= e(loc($t, 'role')) ?></small><?php endif; ?></span>
                     </figcaption>
                 </figure>
@@ -177,7 +177,7 @@ $hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
             <div class="marquee-track">
                 <?php foreach ([false, true] as $copy): foreach ($row as $d): ?>
                     <a class="marquee-item" href="<?= route_url('donors', ['slug' => $d['id']]) ?>"<?= $copy ? ' aria-hidden="true" tabindex="-1"' : '' ?>>
-                        <?php if ($d['logo'] && empty($d['mask_name'])): ?><img src="<?= e(media($d['logo'])) ?>" alt="" loading="lazy"><?php else: ?><span class="donor-initials"><?= e(donor_initials($d)) ?></span><?php endif; ?>
+                        <?php if ($d['logo'] && empty($d['mask_name'])): ?><img src="<?= e(media($d['logo'])) ?>" alt="<?= e(__('Logo de :name', ['name' => donor_name($d)])) ?>" loading="lazy"><?php else: ?><span class="donor-initials"><?= e(donor_initials($d)) ?></span><?php endif; ?>
                         <span><strong><?= e(donor_name($d)) ?></strong><small><?= e(donor_type_label($d['donor_type'])) ?><?= $d['country'] ? ' · ' . e($d['country']) : '' ?></small></span>
                     </a>
                 <?php endforeach; endforeach; ?>

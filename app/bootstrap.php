@@ -45,4 +45,9 @@ if (PHP_SAPI !== 'cli') {
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()');
+    if ($secure) {
+        // HTTPS imposé par le navigateur pendant un an (ce sous-domaine uniquement)
+        header('Strict-Transport-Security: max-age=31536000');
+    }
 }

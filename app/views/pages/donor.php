@@ -61,7 +61,7 @@ $projectTitle = $d['project_slug'] ? loc(['title' => $d['project_title'], 'title
                 <div class="donor-project reveal">
                     <h3><?= e(__('Projet soutenu')) ?></h3>
                     <a class="donor-project-card" href="<?= route_url('projects', ['slug' => $d['project_slug']]) ?>">
-                        <span class="dp-media"><?php if ($d['project_cover']): ?><img src="<?= e(media($d['project_cover'])) ?>" alt="" loading="lazy"><?php else: ?><?= icon('building', 32) ?><?php endif; ?></span>
+                        <span class="dp-media"><?php if ($d['project_cover']): ?><img src="<?= e(media($d['project_cover'])) ?>" alt="<?= e($projectTitle) ?>" loading="lazy"><?php else: ?><?= icon('building', 32) ?><?php endif; ?></span>
                         <span class="dp-body">
                             <span class="meta"><?php if ($d['project_code']): ?><span class="code-tag"><?= e($d['project_code']) ?></span><?php endif; ?> <?= e(status_label((string) $d['project_status'])) ?></span>
                             <strong><?= e($projectTitle) ?></strong>
@@ -82,5 +82,5 @@ $projectTitle = $d['project_slug'] ? loc(['title' => $d['project_title'], 'title
 
 <div class="lightbox" hidden>
     <button class="lightbox-close" aria-label="<?= e(__('Fermer')) ?>"><?= icon('close', 28) ?></button>
-    <figure><img src="" alt=""><figcaption></figcaption></figure>
+    <figure><img alt="" decoding="async"><figcaption></figcaption></figure>
 </div>

@@ -1,7 +1,7 @@
 <?php $masked = !empty($d['mask_name']); $dUrl = route_url('donors', ['slug' => $d['id']]); ?>
 <div class="donor-card reveal is-link">
     <?php if ($d['logo'] && !$masked): ?>
-        <img src="<?= e(media($d['logo'])) ?>" alt="" class="donor-logo" loading="lazy">
+        <img src="<?= e(media($d['logo'])) ?>" alt="<?= e(__('Logo de :name', ['name' => donor_name($d)])) ?>" class="donor-logo" loading="lazy">
     <?php else: ?>
         <span class="donor-initials"><?= e(donor_initials($d)) ?></span>
     <?php endif; ?>

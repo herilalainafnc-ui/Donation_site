@@ -21,6 +21,8 @@ const ROUTES = [
     'testimonials' => ['en' => 'testimonials', 'fr' => 'temoignages'],
     'donors'       => ['en' => 'donors', 'fr' => 'donateurs'],
     'contact'      => ['en' => 'contact', 'fr' => 'contact'],
+    'privacy'      => ['en' => 'privacy-policy', 'fr' => 'politique-de-confidentialite'],
+    'terms'        => ['en' => 'terms', 'fr' => 'conditions-generales'],
 ];
 
 /** Dernier segment de l'adresse de la fiche de suivi d'un projet. */

@@ -47,3 +47,11 @@ CREATE TABLE IF NOT EXISTS messages (
     amount REAL, method TEXT, body TEXT, ip TEXT, is_read INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_messages_read ON messages (is_read, created_at);
+
+-- Statistiques de fréquentation anonymes (aucune adresse IP ni aucun cookie).
+CREATE TABLE IF NOT EXISTS page_views (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, day TEXT NOT NULL, path TEXT NOT NULL, lang TEXT NOT NULL,
+    device TEXT NOT NULL, referrer TEXT NOT NULL DEFAULT '', views INTEGER NOT NULL DEFAULT 0,
+    UNIQUE (day, path, lang, device, referrer)
+);
+CREATE INDEX IF NOT EXISTS idx_page_views_day ON page_views (day);

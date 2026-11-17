@@ -12,6 +12,8 @@ return [
             'logo' => ['label' => 'Logo (laisser vide pour utiliser le sceau officiel de l\'UAZ)', 'type' => 'image', 'dir' => 'site'],
             'currency' => ['label' => 'Devise affichée', 'type' => 'text', 'half' => true, 'help' => 'ex. Ar, MGA, €, $'],
             'notify_email' => ['label' => 'E-mail qui reçoit les notifications', 'type' => 'email', 'half' => true],
+            'og_image' => ['label' => 'Image d\'aperçu pour les réseaux sociaux (1200 × 630 px conseillé)', 'type' => 'image', 'dir' => 'site', 'help' => 'Laissez vide pour utiliser l\'image par défaut aux couleurs de l\'UAZ.'],
+            'ga_measurement_id' => ['label' => 'Identifiant Google Analytics 4 (facultatif)', 'type' => 'text', 'half' => true, 'help' => 'ex. G-XXXXXXXXXX. Chargé uniquement si le visiteur accepte les cookies. Les statistiques anonymes intégrées fonctionnent sans.'],
         ],
     ],
     'home' => [
@@ -64,6 +66,15 @@ return [
             'facebook_url' => ['label' => 'Page Facebook', 'type' => 'url', 'half' => true],
             'youtube_url' => ['label' => 'Chaîne YouTube', 'type' => 'url', 'half' => true],
             'map_embed_url' => ['label' => 'Lien d\'intégration Google Maps', 'type' => 'url', 'help' => 'Google Maps → Partager → Intégrer une carte → copiez uniquement l\'adresse contenue dans src="…".'],
+        ],
+    ],
+    'legal' => [
+        'label' => 'Pages légales',
+        'i18n' => ['legal_privacy', 'legal_terms'],
+        'fields' => [
+            'legal_updated' => ['label' => 'Date de dernière mise à jour', 'type' => 'date', 'half' => true],
+            'legal_privacy' => ['label' => 'Politique de confidentialité', 'type' => 'textarea', 'rows' => 18, 'format_help' => true, 'help' => 'Jetons remplacés automatiquement : {email} (e-mail public), {address} (adresse postale), {site} (adresse du site).'],
+            'legal_terms' => ['label' => 'Conditions générales', 'type' => 'textarea', 'rows' => 18, 'format_help' => true],
         ],
     ],
 ];

@@ -2,7 +2,7 @@
 <article class="project-card reveal tilt">
     <a class="project-media" href="<?= $pUrl ?>" tabindex="-1" aria-hidden="true">
         <?php if ($p['cover_image']): ?>
-            <img src="<?= e(media($p['cover_image'])) ?>" alt="" loading="lazy">
+            <img src="<?= e(media($p['cover_image'])) ?>" alt="<?= e(loc($p, 'title')) ?>" loading="lazy">
         <?php else: ?>
             <span class="media-placeholder"><?= icon('building', 52) ?></span>
         <?php endif; ?>
@@ -28,7 +28,7 @@
         <div class="card-actions">
             <a class="link-arrow" href="<?= $pUrl ?>"><?= e(project_cta_label($p['status'])) ?> <?= icon('arrow', 18) ?></a>
             <?php if ($p['status'] !== 'completed'): ?>
-                <a class="btn btn-gold btn-sm" href="<?= route_url('give', ['query' => ['project' => $p['slug']], 'hash' => 'promesse']) ?>"><span><?= e(__('Soutenir')) ?></span></a>
+                <a class="btn btn-outline btn-sm" href="<?= route_url('give', ['query' => ['project' => $p['slug']], 'hash' => 'promesse']) ?>"><span><?= e(__('Soutenir')) ?></span></a>
             <?php endif; ?>
         </div>
     </div>

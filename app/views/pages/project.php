@@ -178,5 +178,5 @@ $circ = 2 * M_PI * 54;
 
 <div class="lightbox" hidden>
     <button class="lightbox-close" aria-label="<?= e(__('Fermer')) ?>"><?= icon('close', 28) ?></button>
-    <figure><img src="" alt=""><figcaption></figcaption></figure>
+    <figure><img alt="" decoding="async"><figcaption></figcaption></figure>
 </div>

@@ -13,7 +13,7 @@ $projectUrl = rtrim((string) config('site_url', ''), '/') . route_url('projects'
     <meta name="robots" content="noindex">
     <title><?= e(__('Fiche de suivi')) ?> — <?= e($p['code'] ?: $title) ?></title>
     <link rel="icon" type="image/png" href="<?= asset('img/favicon.png') ?>">
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600;700;800&family=Roboto+Slab:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= asset("css/fonts.css") ?>">
     <link rel="stylesheet" href="<?= asset('css/report.css') ?>">
 </head>
 <body>
@@ -28,7 +28,7 @@ $projectUrl = rtrim((string) config('site_url', ''), '/') . route_url('projects'
 
 <main class="sheet" id="sheet">
     <header class="sheet-head">
-        <img src="<?= e(site_logo()) ?>" alt="" class="sheet-logo">
+        <img src="<?= e(site_logo()) ?>" alt="<?= e(__('Sceau de l\'Université Adventiste Zurcher')) ?>" class="sheet-logo">
         <div>
             <p class="sheet-org"><?= e($siteName) ?></p>
             <h1><?= e(__('Fiche de suivi de projet')) ?></h1>
@@ -106,7 +106,7 @@ $projectUrl = rtrim((string) config('site_url', ''), '/') . route_url('projects'
     </footer>
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="<?= asset("vendor/html2pdf.bundle.min.js") ?>"></script>
 <script>
 (function () {
     var btn = document.getElementById('download');
