@@ -32,35 +32,18 @@ $hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
     <a href="#decouvrir" class="scroll-cue" aria-label="<?= e(__('Faire défiler')) ?>"><span></span><?= e(__('Défiler')) ?></a>
 </section>
 
-<!-- Qui sommes-nous + chiffres -->
-<section class="section" id="decouvrir">
+<!-- Qui sommes-nous -->
+<section class="section about-intro" id="decouvrir">
     <div class="container">
         <p class="section-label reveal"><b>01</b> <?= e(__('Qui sommes-nous')) ?></p>
         <p class="statement" data-words><?= e(str_replace(['**', '##'], '', trim(preg_split("/\n{2,}/", trim(setting_t('about_teaser')))[0]))) ?></p>
-        <div class="about-grid">
-            <div class="img-reveal">
-                <?php if (setting('about_image')): ?>
-                    <img src="<?= e(media(setting('about_image'))) ?>" alt="<?= e(__('Campus de l\'Université Adventiste Zurcher')) ?>" loading="lazy">
-                <?php else: ?>
-                    <div class="media-placeholder"><img src="<?= e(site_logo()) ?>" alt="" class="placeholder-seal" aria-hidden="true"></div>
-                <?php endif; ?>
-            </div>
-            <div class="about-side">
-                <div class="stat-list">
-                    <div class="stat-row reveal"><strong data-count="<?= $stats['completed'] ?>"><?= $stats['completed'] ?></strong><span><?= e(__('Projets achevés')) ?><br><small><?= e(__('grâce à nos donateurs')) ?></small></span></div>
-                    <div class="stat-row reveal"><strong data-count="<?= $stats['ongoing'] ?>"><?= $stats['ongoing'] ?></strong><span><?= e(__('Projets en cours')) ?><br><small><?= e(__('à finaliser ensemble')) ?></small></span></div>
-                    <div class="stat-row reveal"><strong data-count="<?= $stats['upcoming'] ?>"><?= $stats['upcoming'] ?></strong><span><?= e(__('Projets à venir')) ?><br><small><?= e(__('pour préparer demain')) ?></small></span></div>
-                    <div class="stat-row reveal"><strong data-count="<?= $stats['donors'] ?>"><?= $stats['donors'] ?></strong><span><?= e(__('Donateurs')) ?><br><small><?= e(__('qui nous font confiance')) ?></small></span></div>
-                </div>
-                <a class="link-arrow reveal" href="<?= route_url('about') ?>"><?= e(__('En savoir plus sur notre mission')) ?> <?= icon('arrow', 18) ?></a>
-            </div>
-        </div>
+        <a class="link-arrow reveal" href="<?= route_url('about') ?>"><?= e(__('En savoir plus sur notre mission')) ?> <?= icon('arrow', 18) ?></a>
     </div>
 </section>
 
-<!-- Projets : défilement horizontal épinglé -->
+<!-- Projets : carrousel horizontal (glisser, flèches, molette horizontale) -->
 <?php if ($projects): ?>
-<section class="section section-alt h-section" data-hscroll>
+<section class="section section-alt h-section">
     <div class="container h-head">
         <div>
             <p class="section-label reveal"><b>02</b> <?= e(__('Nos projets')) ?></p>
@@ -68,10 +51,16 @@ $hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
         </div>
         <div class="h-head-side reveal">
             <p><?= e(__('Construction, équipement, bourses : chaque projet est suivi et son financement affiché en toute transparence.')) ?></p>
-            <a class="link-arrow" href="<?= route_url('projects') ?>"><?= e(__('Tous les projets')) ?> <?= icon('arrow', 18) ?></a>
+            <div class="h-nav">
+                <a class="link-arrow" href="<?= route_url('projects') ?>"><?= e(__('Tous les projets')) ?> <?= icon('arrow', 18) ?></a>
+                <div class="h-arrows">
+                    <button type="button" class="h-arrow prev" data-carousel-prev aria-label="<?= e(__('Projets précédents')) ?>"><?= icon('arrow', 20) ?></button>
+                    <button type="button" class="h-arrow" data-carousel-next aria-label="<?= e(__('Projets suivants')) ?>"><?= icon('arrow', 20) ?></button>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="h-viewport">
+    <div class="h-viewport" data-carousel data-lenis-prevent-wheel tabindex="0" role="region" aria-label="<?= e(__('Nos projets')) ?>">
         <div class="h-track">
             <?php foreach ($projects as $i => $p): ?><?= partial('project_card', ['p' => $p, 'n' => $i + 1]) ?><?php endforeach; ?>
             <a class="project-card more-card" href="<?= route_url('projects') ?>">
@@ -80,6 +69,7 @@ $hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
             </a>
         </div>
     </div>
+    <div class="container"><div class="h-progress" aria-hidden="true"><span></span></div></div>
 </section>
 <?php endif; ?>
 
@@ -183,5 +173,29 @@ $hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
     <?php endforeach; ?>
 </section>
 <?php endif; ?>
+
+<!-- En chiffres : réalisations et donateurs -->
+<section class="section numbers-section">
+    <div class="container">
+        <p class="section-label reveal"><b>06</b> <?= e(__('En chiffres')) ?></p>
+        <div class="about-grid">
+            <div class="img-reveal">
+                <?php if (setting('about_image')): ?>
+                    <img src="<?= e(media(setting('about_image'))) ?>" alt="<?= e(__('Campus de l\'Université Adventiste Zurcher')) ?>" loading="lazy">
+                <?php else: ?>
+                    <div class="media-placeholder"><img src="<?= e(site_logo()) ?>" alt="" class="placeholder-seal" aria-hidden="true"></div>
+                <?php endif; ?>
+            </div>
+            <div class="about-side">
+                <div class="stat-list">
+                    <div class="stat-row reveal"><strong data-count="<?= $stats['completed'] ?>"><?= $stats['completed'] ?></strong><span><?= e(__('Projets achevés')) ?><br><small><?= e(__('grâce à nos donateurs')) ?></small></span></div>
+                    <div class="stat-row reveal"><strong data-count="<?= $stats['ongoing'] ?>"><?= $stats['ongoing'] ?></strong><span><?= e(__('Projets en cours')) ?><br><small><?= e(__('à finaliser ensemble')) ?></small></span></div>
+                    <div class="stat-row reveal"><strong data-count="<?= $stats['upcoming'] ?>"><?= $stats['upcoming'] ?></strong><span><?= e(__('Projets à venir')) ?><br><small><?= e(__('pour préparer demain')) ?></small></span></div>
+                    <div class="stat-row reveal"><strong data-count="<?= $stats['donors'] ?>"><?= $stats['donors'] ?></strong><span><?= e(__('Donateurs')) ?><br><small><?= e(__('qui nous font confiance')) ?></small></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
 <?= partial('cta') ?>

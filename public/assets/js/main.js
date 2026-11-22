@@ -279,26 +279,6 @@
             gsap.from(bar, { width: 0, duration: 2, ease: 'power3.out', scrollTrigger: { trigger: bar, start: 'top 95%' } });
         });
 
-        // --- Projets : défilement horizontal épinglé (grand écran)
-        var mm = gsap.matchMedia();
-        mm.add('(min-width: 1025px)', function () {
-            $$('[data-hscroll]').forEach(function (section) {
-                var track = section.querySelector('.h-track');
-                var distance = function () { return Math.max(0, track.scrollWidth - section.querySelector('.h-viewport').clientWidth); };
-                if (distance() < 40) return;
-                gsap.to(track, {
-                    x: function () { return -distance(); },
-                    ease: 'none',
-                    scrollTrigger: {
-                        trigger: section,
-                        start: function () { return section.offsetHeight > window.innerHeight ? 'bottom bottom' : 'center center'; },
-                        end: function () { return '+=' + distance(); },
-                        pin: true, scrub: 1, invalidateOnRefresh: true, anticipatePin: 1
-                    }
-                });
-            });
-        });
-
         // --- Étapes : ligne de progression + étape active
         $$('[data-steps]').forEach(function (list) {
             var line = list.querySelector('.steps-line');
@@ -542,3 +522,64 @@
 window.addEventListener('pageshow', function () {
     Array.prototype.forEach.call(document.querySelectorAll('form[data-validate] button[aria-busy]'), function (b) { b.disabled = false; b.removeAttribute('aria-busy'); });
 });
+
+/* ------------------------------------------------------------------
+   Carrousel des projets (accueil) : défilement natif + flèches,
+   glisser à la souris, pavé tactile / Maj + molette, flèches du clavier
+   ------------------------------------------------------------------ */
+(function () {
+    'use strict';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-carousel]'), function (vp) {
+        var section = vp.closest('section') || document;
+        var prev = section.querySelector('[data-carousel-prev]');
+        var next = section.querySelector('[data-carousel-next]');
+        var bar = section.querySelector('.h-progress span');
+        var max = function () { return Math.max(0, vp.scrollWidth - vp.clientWidth); };
+        var step = function () {
+            var card = vp.querySelector('.project-card');
+            return card ? card.getBoundingClientRect().width + 28 : vp.clientWidth * .8;
+        };
+        var go = function (dir) { vp.scrollBy({ left: dir * step(), behavior: 'smooth' }); };
+        var update = function () {
+            var m = max();
+            if (prev) prev.disabled = vp.scrollLeft <= 2;
+            if (next) next.disabled = vp.scrollLeft >= m - 2;
+            if (bar) {
+                var w = m ? vp.clientWidth / vp.scrollWidth : 1;
+                bar.style.setProperty('--w', (w * 100).toFixed(1) + '%');
+                bar.style.setProperty('--x', (m ? vp.scrollLeft / m * (1 - w) * 100 : 0).toFixed(1) + '%');
+            }
+        };
+        if (prev) prev.addEventListener('click', function () { go(-1); });
+        if (next) next.addEventListener('click', function () { go(1); });
+        vp.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        vp.addEventListener('keydown', function (ev) {
+            if (ev.key === 'ArrowRight') { ev.preventDefault(); go(1); }
+            if (ev.key === 'ArrowLeft') { ev.preventDefault(); go(-1); }
+        });
+
+        // Glisser à la souris (le tactile utilise le défilement natif)
+        var down = false, moved = false, startX = 0, startLeft = 0;
+        vp.addEventListener('pointerdown', function (ev) {
+            if (ev.pointerType !== 'mouse' || ev.button !== 0) return;
+            down = true; moved = false; startX = ev.clientX; startLeft = vp.scrollLeft;
+        });
+        window.addEventListener('pointermove', function (ev) {
+            if (!down) return;
+            var dx = ev.clientX - startX;
+            if (!moved && Math.abs(dx) > 6) { moved = true; vp.classList.add('is-dragging'); }
+            if (moved) vp.scrollLeft = startLeft - dx;
+        });
+        window.addEventListener('pointerup', function () {
+            if (!down) return;
+            down = false;
+            if (moved) setTimeout(function () { vp.classList.remove('is-dragging'); }, 0);
+        });
+        // Un glisser ne doit pas ouvrir la carte sous le pointeur
+        vp.addEventListener('click', function (ev) { if (moved) { ev.preventDefault(); ev.stopPropagation(); moved = false; } }, true);
+        vp.addEventListener('dragstart', function (ev) { ev.preventDefault(); });
+
+        update();
+    });
+})();
