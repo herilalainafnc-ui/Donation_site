@@ -38,7 +38,7 @@ $projectTitle = $d['project_slug'] ? loc(['title' => $d['project_title'], 'title
                 <div><dt><?= e(__('Type')) ?></dt><dd><?= e(donor_type_label($d['donor_type'])) ?></dd></div>
                 <?php if ($d['country']): ?><div><dt><?= e(__('Pays')) ?></dt><dd><?= e($d['country']) ?></dd></div><?php endif; ?>
                 <?php if ($d['donated_on']): ?><div><dt><?= e(__('Date du don')) ?></dt><dd><?= e(format_date($d['donated_on'])) ?></dd></div><?php endif; ?>
-                <?php if ($d['show_amount'] && (float) $d['amount'] > 0): ?><div><dt><?= e(__('Montant du don')) ?></dt><dd class="donor-amount"><?= e(money($d['amount'])) ?></dd></div><?php endif; ?>
+                <?php if ($d['show_amount'] && (float) $d['amount'] > 0): ?><div><dt><?= e(__('Montant du don')) ?></dt><dd class="donor-amount"><?= e(money($d['amount'], ($d['project_id'] ?? null) ? currency_for_project($d['project_id']) : null)) ?></dd></div><?php endif; ?>
                 <?php if ($d['website'] && !$masked): ?><div><dt><?= e(__('Site web')) ?></dt><dd><a href="<?= e($d['website']) ?>" target="_blank" rel="noopener nofollow"><?= e(preg_replace('#^https?://(www\.)?#', '', rtrim($d['website'], '/'))) ?> ↗</a></dd></div><?php endif; ?>
             </dl>
 
@@ -67,7 +67,7 @@ $projectTitle = $d['project_slug'] ? loc(['title' => $d['project_title'], 'title
                             <strong><?= e($projectTitle) ?></strong>
                             <?php if ((float) $d['project_goal'] > 0): ?>
                                 <span class="progress"><span style="--pct: <?= $ppct ?>%"></span></span>
-                                <small><?= $ppct ?> % · <?= e(money($d['project_raised'])) ?> / <?= e(money($d['project_goal'])) ?></small>
+                                <small><?= $ppct ?> % · <?= e(money($d['project_raised'], currency_for_project($d['project_id']))) ?> / <?= e(money($d['project_goal'], currency_for_project($d['project_id']))) ?></small>
                             <?php endif; ?>
                         </span>
                         <?= icon('arrow', 20) ?>

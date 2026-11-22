@@ -24,7 +24,7 @@ $hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
                     <span class="badge badge-<?= e($hp['status']) ?>"><?= e(status_label($hp['status'])) ?></span>
                     <strong><?= e(loc($hp, 'title')) ?></strong>
                     <span class="progress"><span style="--pct: <?= $hpPct ?>%"></span></span>
-                    <span class="hero-project-meta"><b><?= e(money($hp['raised_amount'])) ?></b><em><?= $hpPct ?> %</em></span>
+                    <span class="hero-project-meta"><b><?= e(money($hp['raised_amount'], project_currency($hp))) ?></b><em><?= $hpPct ?> %</em></span>
                 </a>
             <?php endif; ?>
         </div>

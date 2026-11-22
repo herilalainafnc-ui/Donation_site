@@ -74,6 +74,8 @@ $newColumns = [
     ['donation_methods', 'payment_label_en', 'VARCHAR(100) NULL', 'TEXT'],
     ['donation_methods', 'instructions', 'TEXT NULL', 'TEXT'],
     ['donation_methods', 'instructions_en', 'TEXT NULL', 'TEXT'],
+    // Devise propre à un projet (vide : devise générale du site)
+    ['projects', 'currency', 'VARCHAR(10) NULL', 'TEXT'],
 ];
 foreach ($newColumns as [$table, $column, $mysqlDef, $sqliteDef]) {
     try {

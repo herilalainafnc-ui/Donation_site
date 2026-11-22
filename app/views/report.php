@@ -3,6 +3,7 @@
 $siteName = setting_t('site_name', 'Université Adventiste Zurcher');
 $title = loc($p, 'title');
 $isDone = $p['status'] === 'completed';
+$cur = project_currency($p);
 $fileName = 'fiche-de-suivi-' . slugify((string) ($p['code'] ?: $p['slug']));
 $projectUrl = rtrim((string) config('site_url', ''), '/') . route_url('projects', ['slug' => $p['slug']]);
 ?><!doctype html>
@@ -58,9 +59,9 @@ $projectUrl = rtrim((string) config('site_url', ''), '/') . route_url('projects'
         <div class="box box-funding">
             <h3><?= e(__('Financement')) ?></h3>
             <table class="kv">
-                <tr><th><?= e(__('Objectif')) ?></th><td><?= $dash['goal'] > 0 ? e(money($dash['goal'])) : '—' ?></td></tr>
-                <tr><th><?= e(__('Montant collecté')) ?></th><td class="strong"><?= e(money($dash['raised'])) ?></td></tr>
-                <tr><th><?= e(__('Reste à financer')) ?></th><td><?= $dash['goal'] > 0 ? ($dash['missing'] > 0 ? e(money($dash['missing'])) : e(__('Objectif atteint'))) : '—' ?></td></tr>
+                <tr><th><?= e(__('Objectif')) ?></th><td><?= $dash['goal'] > 0 ? e(money($dash['goal'], $cur)) : '—' ?></td></tr>
+                <tr><th><?= e(__('Montant collecté')) ?></th><td class="strong"><?= e(money($dash['raised'], $cur)) ?></td></tr>
+                <tr><th><?= e(__('Reste à financer')) ?></th><td><?= $dash['goal'] > 0 ? ($dash['missing'] > 0 ? e(money($dash['missing'], $cur)) : e(__('Objectif atteint'))) : '—' ?></td></tr>
                 <tr><th><?= e(__('Taux de financement')) ?></th><td class="strong"><?= $dash['goal'] > 0 ? $dash['pct'] . ' %' : '—' ?></td></tr>
             </table>
             <?php if ($dash['goal'] > 0): ?>
@@ -90,7 +91,7 @@ $projectUrl = rtrim((string) config('site_url', ''), '/') . route_url('projects'
                             <td><?= e(donor_name($d)) ?></td>
                             <td><?= e(donor_type_label($d['donor_type'])) ?></td>
                             <td><?= $d['donated_on'] ? e(format_date($d['donated_on'])) : '—' ?></td>
-                            <td class="num"><?= $d['show_amount'] && (float) $d['amount'] > 0 ? e(money($d['amount'])) : e(__('Non communiqué')) ?></td>
+                            <td class="num"><?= $d['show_amount'] && (float) $d['amount'] > 0 ? e(money($d['amount'], $cur)) : e(__('Non communiqué')) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

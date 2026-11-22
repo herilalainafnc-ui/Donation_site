@@ -197,9 +197,10 @@ function admin_dashboard(): void
     admin_render('dashboard', [
         'title' => 'Tableau de bord',
         'byStatus' => $byStatus,
-        'raised' => (float) fetch_value('SELECT COALESCE(SUM(raised_amount), 0) FROM projects'),
-        'goal' => (float) fetch_value("SELECT COALESCE(SUM(goal_amount), 0) FROM projects WHERE status <> 'completed'"),
-        'raisedOpen' => (float) fetch_value("SELECT COALESCE(SUM(raised_amount), 0) FROM projects WHERE status <> 'completed'"),
+        // Totaux par devise : chaque projet peut avoir sa propre devise
+        'raised' => sum_by_currency(fetch_all('SELECT raised_amount, currency FROM projects'), 'raised_amount'),
+        'goal' => sum_by_currency($open = fetch_all("SELECT goal_amount, raised_amount, currency FROM projects WHERE status <> 'completed'"), 'goal_amount'),
+        'raisedOpen' => sum_by_currency($open, 'raised_amount'),
         'donors' => (int) fetch_value('SELECT COUNT(*) FROM donors'),
         'testimonials' => (int) fetch_value('SELECT COUNT(*) FROM testimonials'),
         'unread' => (int) fetch_value('SELECT COUNT(*) FROM messages WHERE is_read = 0'),
@@ -393,6 +394,9 @@ function crud_save(string $key, array $ent, int $id): never
                 $v = trim((string) $raw);
                 if (!empty($def['uppercase'])) {
                     $v = mb_strtoupper(preg_replace('/\s+/', '-', $v));
+                }
+                if (!empty($def['maxlength']) && mb_strlen($v) > $def['maxlength']) {
+                    $errors[] = "$label : {$def['maxlength']} caractères maximum.";
                 }
                 $data[$name] = $v === '' ? null : $v;
         }

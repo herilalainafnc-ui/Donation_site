@@ -10,12 +10,12 @@
 <div class="grid-2">
     <section class="panel">
         <div class="panel-head"><h2>Financement</h2></div>
-        <p class="big-number"><?= e(money($raised)) ?></p>
-        <p class="muted">collectés au total (tous projets)</p>
-        <?php if ($goal > 0): $pct = percent($raisedOpen, $goal); ?>
+        <p class="big-number"><?= e(money_totals($raised)) ?></p>
+        <p class="muted">collectés au total (tous projets<?= count(array_filter($raised)) > 1 ? ', par devise' : '' ?>)</p>
+        <?php foreach ($goal as $cur => $g): if ($g <= 0) continue; $ro = $raisedOpen[$cur] ?? 0; $pct = percent($ro, $g); ?>
             <div class="progress"><span style="width: <?= $pct ?>%"></span></div>
-            <p class="muted"><?= e(money($raisedOpen)) ?> sur <?= e(money($goal)) ?> pour les projets en cours et à venir (<?= $pct ?> %)</p>
-        <?php endif; ?>
+            <p class="muted"><?= e(money($ro, $cur)) ?> sur <?= e(money($g, $cur)) ?> pour les projets en cours et à venir (<?= $pct ?> %)</p>
+        <?php endforeach; ?>
         <h3>Projets en cours</h3>
         <?php if ($projects): ?>
             <ul class="mini-list">
@@ -35,7 +35,7 @@
                         <a href="<?= admin_url('messages', ['a' => 'view', 'id' => $m['id']]) ?>">
                             <span class="pill <?= $m['kind'] === 'pledge' ? 'pill-ongoing' : '' ?>"><?= $m['kind'] === 'pledge' ? 'Don' : 'Contact' ?></span>
                             <strong><?= e($m['name']) ?></strong>
-                            <span class="muted"><?= $m['amount'] ? e(money($m['amount'])) : e(excerpt($m['body'] ?? '', 50)) ?></span>
+                            <span class="muted"><?= $m['amount'] ? e(money($m['amount'], ($m['project_id'] ? currency_for_project($m['project_id']) : null))) : e(excerpt($m['body'] ?? '', 50)) ?></span>
                             <small><?= e(format_date($m['created_at'])) ?></small>
                         </a>
                     </li>

@@ -647,3 +647,16 @@ window.addEventListener('pageshow', function () {
         update();
     });
 })();
+
+// Promesse de don : la devise affichée à côté du montant suit le projet choisi
+(function () {
+    var label = document.querySelector('[data-pledge-currency]');
+    var select = label && label.closest('form') ? label.closest('form').querySelector('select[name=project_id]') : null;
+    if (!select) return;
+    var sync = function () {
+        var opt = select.options[select.selectedIndex];
+        label.textContent = (opt && opt.getAttribute('data-currency')) || label.getAttribute('data-default');
+    };
+    select.addEventListener('change', sync);
+    sync();
+})();

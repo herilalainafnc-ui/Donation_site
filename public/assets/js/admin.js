@@ -42,3 +42,16 @@
         }
     });
 })();
+
+// Devise d'un projet : le suffixe des champs de montant suit la devise saisie (sinon la devise générale)
+(function () {
+    var input = document.getElementById('f_currency');
+    var suffixes = document.querySelectorAll('[data-currency-suffix]');
+    if (!input || !suffixes.length) return;
+    var sync = function () {
+        var v = input.value.trim();
+        Array.prototype.forEach.call(suffixes, function (s) { s.textContent = v || s.getAttribute('data-default'); });
+    };
+    input.addEventListener('input', sync);
+    sync();
+})();

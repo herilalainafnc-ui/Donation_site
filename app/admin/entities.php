@@ -28,6 +28,7 @@ return [
             '_h_funding' => ['label' => 'Financement et calendrier', 'type' => 'heading'],
             'goal_amount' => ['label' => 'Objectif financier', 'type' => 'money', 'half' => true],
             'raised_amount' => ['label' => 'Montant déjà collecté', 'type' => 'money', 'half' => true],
+            'currency' => ['label' => 'Devise de ce projet', 'type' => 'text', 'half' => true, 'maxlength' => 10, 'help' => 'ex. Ar, MGA, €, $, USD, EUR. Laissez vide pour utiliser la devise générale (Paramètres du site → Général).'],
             'start_date' => ['label' => 'Date de début', 'type' => 'date', 'half' => true],
             'end_date' => ['label' => 'Date de fin (prévue ou réelle)', 'type' => 'date', 'half' => true],
             '_h_media' => ['label' => 'Images et documents', 'type' => 'heading'],

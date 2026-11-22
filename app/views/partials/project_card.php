@@ -20,7 +20,7 @@
             <div class="funding">
                 <div class="progress" role="progressbar" aria-valuenow="<?= $pct ?>" aria-valuemin="0" aria-valuemax="100" aria-label="<?= e(__('Financement')) ?>"><span style="--pct: <?= $pct ?>%"></span></div>
                 <div class="progress-legend">
-                    <span><strong><?= e(money($p['raised_amount'])) ?></strong> / <?= e(money($p['goal_amount'])) ?></span>
+                    <span><strong><?= e(money($p['raised_amount'], project_currency($p))) ?></strong> / <?= e(money($p['goal_amount'], project_currency($p))) ?></span>
                     <span><?= $pct ?> %</span>
                 </div>
             </div>

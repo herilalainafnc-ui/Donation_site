@@ -13,7 +13,7 @@
         <?php if ($msg['subject']): ?><div><dt>Sujet</dt><dd><?= e($msg['subject']) ?></dd></div><?php endif; ?>
         <?php if ($msg['kind'] === 'pledge'): ?>
             <div><dt>Projet</dt><dd><?= e($msg['project_title'] ?? 'Là où le besoin est le plus grand') ?></dd></div>
-            <div><dt>Montant annoncé</dt><dd><?= $msg['amount'] ? e(money($msg['amount'])) : '—' ?></dd></div>
+            <div><dt>Montant annoncé</dt><dd><?= $msg['amount'] ? e(money($msg['amount'], $msg['project_id'] ? currency_for_project($msg['project_id']) : null)) : '—' ?></dd></div>
             <div><dt>Moyen de don</dt><dd><?= e($msg['method'] ?? '—') ?></dd></div>
         <?php endif; ?>
     </dl>

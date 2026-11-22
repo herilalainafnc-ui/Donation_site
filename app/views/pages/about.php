@@ -40,7 +40,7 @@
         <div class="stat"><strong data-count="<?= $stats['completed'] ?>"><?= $stats['completed'] ?></strong><span><?= e(__('Projets achevés')) ?></span></div>
         <div class="stat"><strong data-count="<?= $stats['ongoing'] ?>"><?= $stats['ongoing'] ?></strong><span><?= e(__('Projets en cours')) ?></span></div>
         <div class="stat"><strong data-count="<?= $stats['upcoming'] ?>"><?= $stats['upcoming'] ?></strong><span><?= e(__('Projets à venir')) ?></span></div>
-        <div class="stat"><strong><?= e(money($stats['raised'])) ?></strong><span><?= e(__('Collectés grâce à vous')) ?></span></div>
+        <div class="stat"><strong><?= e($stats['raised_label']) ?></strong><span><?= e(__('Collectés grâce à vous')) ?></span></div>
     </div>
 </section>
 

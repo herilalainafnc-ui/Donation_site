@@ -701,3 +701,52 @@ function form_validate_attr(): string
         'summary' => __('Merci de corriger les champs signalés.'),
     ], JSON_UNESCAPED_UNICODE)) . '"';
 }
+
+/* ---------- Devises : chaque projet peut avoir la sienne ---------- */
+
+/** Devise d'un projet (colonne « currency »), sinon la devise générale du site. */
+function project_currency(?array $p): string
+{
+    $c = trim((string) ($p['currency'] ?? ''));
+    return $c !== '' ? $c : setting('currency', 'Ar');
+}
+
+/** Devise du projet d'identifiant donné (promesses de don, donateurs liés à un projet). */
+function currency_for_project(mixed $projectId): string
+{
+    static $map = null;
+    if ($map === null) {
+        $map = [];
+        try {
+            foreach (fetch_all('SELECT id, currency FROM projects') as $r) {
+                $map[(int) $r['id']] = trim((string) $r['currency']);
+            }
+        } catch (Throwable) {
+            // colonne pas encore migrée : devise générale
+        }
+    }
+    $c = $map[(int) $projectId] ?? '';
+    return $c !== '' ? $c : setting('currency', 'Ar');
+}
+
+/**
+ * Additionne des montants par devise. $rows : lignes contenant la colonne $col et une devise
+ * (« currency », vide = devise générale). Renvoie [devise => total].
+ */
+function sum_by_currency(array $rows, string $col): array
+{
+    $sums = [];
+    foreach ($rows as $r) {
+        $c = project_currency($r);
+        $sums[$c] = ($sums[$c] ?? 0) + (float) ($r[$col] ?? 0);
+    }
+    return $sums;
+}
+
+/** Affiche des totaux par devise : « 12 000 000 Ar + 5 000 € ». */
+function money_totals(array $sums): string
+{
+    $sums = array_filter($sums, fn($v) => $v > 0) ?: [setting('currency', 'Ar') => 0];
+    arsort($sums);
+    return implode(' + ', array_map(fn($c, $v) => money($v, $c), array_keys($sums), $sums));
+}

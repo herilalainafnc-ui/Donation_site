@@ -125,6 +125,8 @@ function site_stats(): array
         'upcoming'  => $byStatus['upcoming'] ?? 0,
         'donors'    => (int) fetch_value('SELECT COUNT(*) FROM donors WHERE is_published = 1'),
         'raised'    => (float) fetch_value('SELECT COALESCE(SUM(raised_amount), 0) FROM projects WHERE is_published = 1'),
+        // Total collecté, devise par devise (les projets peuvent avoir des devises différentes)
+        'raised_label' => money_totals(sum_by_currency(fetch_all('SELECT raised_amount, currency FROM projects WHERE is_published = 1'), 'raised_amount')),
     ];
 }
 
@@ -284,7 +286,7 @@ function page_method(int $id): void
 
 function give_project_options(): array
 {
-    return fetch_all("SELECT id, title, title_en, slug, code FROM projects WHERE is_published = 1 AND status <> 'completed' ORDER BY sort_order, title");
+    return fetch_all("SELECT id, title, title_en, slug, code, currency FROM projects WHERE is_published = 1 AND status <> 'completed' ORDER BY sort_order, title");
 }
 
 function page_give(): void
@@ -424,7 +426,7 @@ function handle_message_form(string $kind, string $back): never
     $label = $kind === 'pledge' ? 'Nouvelle promesse de don' : 'Nouveau message de contact';
     notify_admin($label . ' — ' . $data['name'], "Nom : {$data['name']}\nE-mail : {$data['email']}\nTéléphone : {$data['phone']}\n"
         . 'Langue du site : ' . LANGS[lang()] . "\n"
-        . ($amount ? 'Montant : ' . money($amount) . "\n" : '') . "\n{$data['body']}\n\n" . absolute_url('admin/?p=messages'));
+        . ($amount ? 'Montant : ' . money($amount, $projectId ? currency_for_project($projectId) : null) . "\n" : '') . "\n{$data['body']}\n\n" . absolute_url('admin/?p=messages'));
 
     flash('success', $kind === 'pledge'
         ? __('Merci pour votre générosité ! Nous avons bien reçu votre promesse de don et vous contacterons rapidement.')

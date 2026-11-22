@@ -58,7 +58,7 @@ function admin_field(string $name, array $def, mixed $value): string
             if ($type === 'money' && is_numeric($v)) {
                 $v = rtrim(rtrim(number_format((float) $v, 2, '.', ''), '0'), '.');
             }
-            $suffix = $type === 'money' ? '<span class="suffix">' . e(setting('currency', 'Ar')) . '</span>' : '';
+            $suffix = $type === 'money' ? '<span class="suffix" data-currency-suffix data-default="' . e(setting('currency', 'Ar')) . '">' . e(setting('currency', 'Ar')) . '</span>' : '';
             $input = '<div class="input-suffix"><input id="' . $id . '" type="text" inputmode="decimal" name="' . $name . '" value="' . e($v) . '"' . $req . '>' . $suffix . '</div>';
             break;
         default:
@@ -82,7 +82,7 @@ function admin_cell(string $col, array $ent, array $row, array $options): string
         'checkbox' => $v ? '<span class="pill pill-ok">Oui</span>' : '<span class="pill">Non</span>',
         'url' => $v ? '<span class="pill pill-ok">Oui</span>' : '<span class="pill">—</span>',
         'file' => $v ? '<a href="' . e(media($v)) . '" target="_blank" rel="noopener">PDF</a>' : '—',
-        'money' => $v !== null ? e(money($v)) : '—',
+        'money' => $v !== null ? e(money($v, array_key_exists('currency', $row) ? project_currency($row) : (!empty($row['project_id']) ? currency_for_project($row['project_id']) : null))) : '—',
         'select' => $col === 'status'
             ? '<span class="pill pill-' . e($v) . '">' . e($options[$col][$v] ?? $v) . '</span>'
             : e($options[$col][(string) $v] ?? '—'),

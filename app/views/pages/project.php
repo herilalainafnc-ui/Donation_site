@@ -3,6 +3,7 @@ $p = $project;
 $location = loc($p, 'location');
 $isDone = $p['status'] === 'completed';
 $hasGoal = $dash['goal'] > 0;
+$cur = project_currency($p);
 $dashTitle = match ($p['status']) {
     'ongoing' => __('Avancement du projet'),
     'completed' => __('Bilan du projet'),
@@ -57,16 +58,16 @@ $circ = 2 * M_PI * 54;
                 <div class="dash-tiles">
                     <div class="tile tile-raised">
                         <span class="tile-label"><?= icon('check', 18) ?> <?= e(__('Montant collecté')) ?></span>
-                        <strong><?= e(money($dash['raised'])) ?></strong>
+                        <strong><?= e(money($dash['raised'], $cur)) ?></strong>
                     </div>
                     <?php if ($hasGoal): ?>
                         <div class="tile tile-missing<?= $dash['missing'] <= 0 ? ' is-done' : '' ?>">
                             <span class="tile-label"><?= icon('target', 18) ?> <?= e(__('Reste à financer')) ?></span>
-                            <strong><?= $dash['missing'] > 0 ? e(money($dash['missing'])) : e(__('Objectif atteint')) ?></strong>
+                            <strong><?= $dash['missing'] > 0 ? e(money($dash['missing'], $cur)) : e(__('Objectif atteint')) ?></strong>
                         </div>
                         <div class="tile">
                             <span class="tile-label"><?= icon('building', 18) ?> <?= e(__('Objectif')) ?></span>
-                            <strong><?= e(money($dash['goal'])) ?></strong>
+                            <strong><?= e(money($dash['goal'], $cur)) ?></strong>
                         </div>
                     <?php endif; ?>
                     <div class="tile">
@@ -79,7 +80,7 @@ $circ = 2 * M_PI * 54;
             <?php if ($hasGoal): ?>
                 <div class="dash-bar">
                     <div class="progress progress-lg"><span style="--pct: <?= $dash['pct'] ?>%"></span></div>
-                    <div class="dash-bar-legend"><span><?= e(money($dash['raised'])) ?></span><span><?= e(money($dash['goal'])) ?></span></div>
+                    <div class="dash-bar-legend"><span><?= e(money($dash['raised'], $cur)) ?></span><span><?= e(money($dash['goal'], $cur)) ?></span></div>
                 </div>
             <?php endif; ?>
 
@@ -126,8 +127,8 @@ $circ = 2 * M_PI * 54;
                     <?php if ($location !== ''): ?><div><dt><?= e(__('Lieu')) ?></dt><dd><?= e($location) ?></dd></div><?php endif; ?>
                     <?php if ($p['start_date']): ?><div><dt><?= e(__('Début')) ?></dt><dd><?= e(format_date($p['start_date'])) ?></dd></div><?php endif; ?>
                     <?php if ($p['end_date']): ?><div><dt><?= e($isDone ? __('Achèvement') : __('Fin prévue')) ?></dt><dd><?= e(format_date($p['end_date'])) ?></dd></div><?php endif; ?>
-                    <?php if ($hasGoal): ?><div><dt><?= e(__('Objectif')) ?></dt><dd><?= e(money($dash['goal'])) ?></dd></div><?php endif; ?>
-                    <div><dt><?= e(__('Collecté')) ?></dt><dd><?= e(money($dash['raised'])) ?></dd></div>
+                    <?php if ($hasGoal): ?><div><dt><?= e(__('Objectif')) ?></dt><dd><?= e(money($dash['goal'], $cur)) ?></dd></div><?php endif; ?>
+                    <div><dt><?= e(__('Collecté')) ?></dt><dd><?= e(money($dash['raised'], $cur)) ?></dd></div>
                     <div><dt><?= e(__('Mise à jour')) ?></dt><dd><?= e(format_date($p['updated_at'] ?: $p['created_at'])) ?></dd></div>
                 </dl>
                 <?php if (!$isDone): ?>

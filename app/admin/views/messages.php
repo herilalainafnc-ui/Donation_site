@@ -15,7 +15,7 @@
                     <td data-label="Nom"><a class="row-title" href="<?= $viewUrl ?>"><?= e($m['name']) ?></a></td>
                     <td data-label="E-mail"><?= e($m['email']) ?></td>
                     <td data-label="Projet / sujet"><?= e($m['project_title'] ?? ($m['subject'] ?? '—')) ?></td>
-                    <td data-label="Montant"><?= $m['amount'] ? e(money($m['amount'])) : '—' ?></td>
+                    <td data-label="Montant"><?= $m['amount'] ? e(money($m['amount'], ($m['project_id'] ? currency_for_project($m['project_id']) : null))) : '—' ?></td>
                     <td data-label="Reçu le"><?= e(date('d/m/Y H:i', strtotime($m['created_at']))) ?></td>
                     <td class="actions-col">
                         <a class="btn btn-light btn-sm" href="<?= $viewUrl ?>">Ouvrir</a>
