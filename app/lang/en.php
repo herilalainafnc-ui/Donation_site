@@ -283,6 +283,7 @@ return [
     'Avancement des travaux' => 'Construction progress',
     ':n étape(s)' => ':n update(s)',
     'Travaux : :pct %' => 'Works: :pct %',
+    '+ :n autre(s) photo(s) sur la page du projet.' => '+ :n more photo(s) on the project page.',
     'Budget engagé par l\'UAZ' => 'Budget committed by UAZ',
     'engagé par l\'université' => 'committed by the university',
     'grâce aux donateurs' => 'thanks to donors',

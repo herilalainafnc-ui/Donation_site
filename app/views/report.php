@@ -4,6 +4,16 @@ $siteName = setting_t('site_name', 'Université Adventiste Zurcher');
 $title = loc($p, 'title');
 $isDone = $p['status'] === 'completed';
 $cur = project_currency($p);
+$updates ??= [];
+// Dernière étape indiquant un pourcentage de travaux (les étapes sont triées de la plus récente à la plus ancienne)
+$lastWorks = null;
+foreach ($updates as $u) {
+    if ((int) $u['progress'] > 0) {
+        $lastWorks = $u;
+        break;
+    }
+}
+const REPORT_PHOTOS_PER_STEP = 4;
 $fileName = 'fiche-de-suivi-' . slugify((string) ($p['code'] ?: $p['slug']));
 $projectUrl = rtrim((string) config('site_url', ''), '/') . route_url('projects', ['slug' => $p['slug']]);
 ?><!doctype html>
@@ -54,6 +64,7 @@ $projectUrl = rtrim((string) config('site_url', ''), '/') . route_url('projects'
                 <?php if ($p['start_date']): ?><tr><th><?= e(__('Début')) ?></th><td><?= e(format_date($p['start_date'])) ?></td></tr><?php endif; ?>
                 <?php if ($p['end_date']): ?><tr><th><?= e($isDone ? __('Achèvement') : __('Fin prévue')) ?></th><td><?= e(format_date($p['end_date'])) ?></td></tr><?php endif; ?>
                 <tr><th><?= e(__('Donateurs')) ?></th><td><?= (int) $dash['donors'] ?></td></tr>
+                <?php if ($lastWorks): ?><tr><th><?= e(__('Avancement des travaux')) ?></th><td class="strong"><?= min(100, (int) $lastWorks['progress']) ?> % <small class="muted">(<?= e(format_date($lastWorks['update_date'])) ?>)</small></td></tr><?php endif; ?>
             </table>
         </div>
         <div class="box box-funding">
@@ -79,6 +90,33 @@ $projectUrl = rtrim((string) config('site_url', ''), '/') . route_url('projects'
         <section class="box">
             <h3><?= e(__('Détails du projet')) ?></h3>
             <div class="prose"><?= rich_text(loc($p, 'description')) ?></div>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($updates): ?>
+        <section class="box box-progress">
+            <h3><?= e(__('Avancement des travaux')) ?></h3>
+            <ol class="pl">
+                <?php foreach ($updates as $u): $uPct = max(0, min(100, (int) $u['progress'])); $shown = array_slice($u['photos'], 0, REPORT_PHOTOS_PER_STEP); $more = count($u['photos']) - count($shown); ?>
+                    <li class="pl-step">
+                        <div class="pl-head">
+                            <span class="pl-date"><?= e(format_date($u['update_date'])) ?></span>
+                            <strong class="pl-title"><?= e(loc($u, 'title')) ?></strong>
+                            <?php if ($uPct > 0): ?><span class="pl-pct"><?= e(__('Travaux : :pct %', ['pct' => $uPct])) ?></span><?php endif; ?>
+                        </div>
+                        <?php if ($uPct > 0): ?><div class="pl-bar"><span style="width: <?= $uPct ?>%"></span></div><?php endif; ?>
+                        <?php if (loc($u, 'body') !== ''): ?><div class="prose pl-body"><?= rich_text(loc($u, 'body')) ?></div><?php endif; ?>
+                        <?php if ($shown): ?>
+                            <div class="pl-photos">
+                                <?php foreach ($shown as $ph): $capt = loc($ph, 'caption') ?: loc($u, 'title'); ?>
+                                    <figure><img src="<?= e(media($ph['path'])) ?>" alt="<?= e($capt) ?>"><figcaption><?= e($capt) ?></figcaption></figure>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php if ($more > 0): ?><p class="note"><?= e(__('+ :n autre(s) photo(s) sur la page du projet.', ['n' => $more])) ?></p><?php endif; ?>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ol>
         </section>
     <?php endif; ?>
 
@@ -124,7 +162,7 @@ $projectUrl = rtrim((string) config('site_url', ''), '/') . route_url('projects'
             image: { type: 'jpeg', quality: 0.96 },
             html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.box h3', '.bar'] }
+            pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.box h3', '.bar', '.pl-step'] }
         }).from(document.getElementById('sheet')).save().then(function () {
             status.textContent = <?= json_encode(__('Fiche téléchargée.')) ?>;
             btn.disabled = false;

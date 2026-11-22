@@ -264,6 +264,7 @@ function page_project_report(string $slug): void
         'p' => $project,
         'dash' => project_dashboard($project, count($donors)),
         'donors' => $donors,
+        'updates' => project_updates((int) $project['id']),
         'autoDownload' => isset($_GET['download']),
     ]);
 }
