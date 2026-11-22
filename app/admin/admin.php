@@ -30,6 +30,14 @@ function admin_entities(): array
         $e = require APP . '/admin/entities.php';
         foreach ($e as &$ent) {
             $ent['fields'] = expand_i18n($ent['fields'], $ent['i18n'] ?? []);
+            if (!empty($ent['filter']) && is_string($ent['filter'][1])) {
+                $opts = [];
+                foreach (fetch_all($ent['filter'][1]) as $r) {
+                    $r = array_values($r);
+                    $opts[(string) $r[0]] = (string) $r[1];
+                }
+                $ent['filter'][1] = $opts;
+            }
         }
     }
     return $e;
@@ -241,6 +249,15 @@ function admin_crud(string $key, array $ent, string $a): void
             admin_not_found();
         }
         $values = $row ?? [];
+        if (!$row) {
+            foreach ($ent['fields'] as $name => $def) {
+                if (isset($_GET[$name]) && is_scalar($_GET[$name])) {
+                    $values[$name] = (string) $_GET[$name];
+                } elseif (isset($def['default']) && !in_array($def['type'], ['checkbox', 'number', 'money'], true)) {
+                    $values[$name] = $def['default'];
+                }
+            }
+        }
         $fromOld = isset($_SESSION['_old']);
         if ($fromOld) {
             $old = $_SESSION['_old'];
@@ -257,7 +274,9 @@ function admin_crud(string $key, array $ent, string $a): void
         admin_render('form', [
             'title' => ($row ? 'Modifier ' : 'Ajouter ') . $ent['singular'],
             'key' => $key, 'ent' => $ent, 'row' => $row, 'values' => $values, 'fromOld' => $fromOld,
-            'images' => (!empty($ent['gallery']) && $row) ? fetch_all('SELECT * FROM project_images WHERE project_id = ? ORDER BY sort_order, id', [$row['id']]) : [],
+            'images' => (!empty($ent['gallery']) && $row) ? fetch_all('SELECT * FROM ' . gallery_conf($ent)['table'] . ' WHERE ' . gallery_conf($ent)['fk'] . ' = ? ORDER BY sort_order, id', [$row['id']]) : [],
+            'gallery' => !empty($ent['gallery']) ? gallery_conf($ent) : null,
+            'updates' => ($key === 'projects' && $row) ? fetch_all('SELECT u.*, (SELECT COUNT(*) FROM update_images i WHERE i.update_id = u.id) AS photos FROM project_updates u WHERE u.project_id = ? ORDER BY update_date DESC, id DESC', [$row['id']]) : [],
             'nav' => $key,
         ]);
         return;
@@ -449,36 +468,55 @@ function crud_save(string $key, array $ent, int $id): never
         q('UPDATE projects SET code = ? WHERE id = ?', [default_project_code($id), $id]);
     }
     if (!empty($ent['gallery'])) {
-        save_gallery($id);
+        save_gallery($id, gallery_conf($ent));
     }
     flash('success', 'Enregistré avec succès.');
     redirect(admin_url($key, ['a' => 'edit', 'id' => $id]));
 }
 
-function save_gallery(int $projectId): void
+/** Réglages de la galerie d'une entité (« true » = galerie photos d'un projet). */
+function gallery_conf(array $ent): array
 {
+    $g = is_array($ent['gallery']) ? $ent['gallery'] : [];
+    return $g + ['table' => 'project_images', 'fk' => 'project_id', 'dir' => 'projects', 'caption_required' => false, 'caption_en' => false,
+        'legend' => 'Galerie photos', 'help' => ''];
+}
+
+function save_gallery(int $parentId, array $g): void
+{
+    $t = $g['table'];
+    $fk = $g['fk'];
     $remove = array_map('intval', (array) ($_POST['gallery_delete'] ?? []));
     foreach ($remove as $imgId) {
-        $img = fetch_one('SELECT * FROM project_images WHERE id = ? AND project_id = ?', [$imgId, $projectId]);
+        $img = fetch_one("SELECT * FROM $t WHERE id = ? AND $fk = ?", [$imgId, $parentId]);
         if ($img) {
             delete_upload($img['path']);
-            q('DELETE FROM project_images WHERE id = ?', [$imgId]);
+            q("DELETE FROM $t WHERE id = ?", [$imgId]);
         }
     }
     foreach ((array) ($_POST['gallery_caption'] ?? []) as $imgId => $caption) {
         $order = (int) ($_POST['gallery_order'][$imgId] ?? 0);
-        q('UPDATE project_images SET caption = ?, sort_order = ? WHERE id = ? AND project_id = ?',
-            [mb_substr(trim((string) $caption), 0, 255) ?: null, $order, (int) $imgId, $projectId]);
+        q("UPDATE $t SET caption = ?, sort_order = ? WHERE id = ? AND $fk = ?",
+            [mb_substr(trim((string) $caption), 0, 255) ?: null, $order, (int) $imgId, $parentId]);
+        if ($g['caption_en']) {
+            q("UPDATE $t SET caption_en = ? WHERE id = ? AND $fk = ?", [mb_substr(trim((string) ($_POST['gallery_caption_en'][$imgId] ?? '')), 0, 255) ?: null, (int) $imgId, $parentId]);
+        }
     }
-    $next = (int) fetch_value('SELECT COALESCE(MAX(sort_order), 0) FROM project_images WHERE project_id = ?', [$projectId]);
+    $next = (int) fetch_value("SELECT COALESCE(MAX(sort_order), 0) FROM $t WHERE $fk = ?", [$parentId]);
     foreach (normalize_files($_FILES['gallery'] ?? null) as $file) {
         try {
-            $path = upload_image($file, 'projects');
+            $path = upload_image($file, $g['dir']);
             if ($path) {
-                q('INSERT INTO project_images (project_id, path, sort_order) VALUES (?, ?, ?)', [$projectId, $path, ++$next]);
+                q("INSERT INTO $t ($fk, path, sort_order) VALUES (?, ?, ?)", [$parentId, $path, ++$next]);
             }
         } catch (RuntimeException $ex) {
-            flash('error', 'Galerie — ' . $file['name'] . ' : ' . $ex->getMessage());
+            flash('error', 'Photos — ' . $file['name'] . ' : ' . $ex->getMessage());
+        }
+    }
+    if ($g['caption_required']) {
+        $missing = (int) fetch_value("SELECT COUNT(*) FROM $t WHERE $fk = ? AND (caption IS NULL OR caption = '')", [$parentId]);
+        if ($missing) {
+            flash('error', $missing . ' photo(s) sans légende : ajoutez un sous-titre à chaque photo puis enregistrez.');
         }
     }
 }
@@ -493,10 +531,18 @@ function crud_delete(string $key, array $ent, int $id): never
             }
         }
         if (!empty($ent['gallery'])) {
-            foreach (fetch_all('SELECT path FROM project_images WHERE project_id = ?', [$id]) as $img) {
+            $g = gallery_conf($ent);
+            foreach (fetch_all("SELECT path FROM {$g['table']} WHERE {$g['fk']} = ?", [$id]) as $img) {
                 delete_upload($img['path']);
             }
-            q('DELETE FROM project_images WHERE project_id = ?', [$id]);
+            q("DELETE FROM {$g['table']} WHERE {$g['fk']} = ?", [$id]);
+        }
+        if ($ent['table'] === 'projects') {
+            foreach (fetch_all('SELECT i.path FROM update_images i JOIN project_updates u ON u.id = i.update_id WHERE u.project_id = ?', [$id]) as $img) {
+                delete_upload($img['path']);
+            }
+            q('DELETE FROM update_images WHERE update_id IN (SELECT id FROM project_updates WHERE project_id = ?)', [$id]);
+            q('DELETE FROM project_updates WHERE project_id = ?', [$id]);
         }
         q("DELETE FROM {$ent['table']} WHERE id = ?", [$id]);
         flash('success', 'Élément supprimé.');

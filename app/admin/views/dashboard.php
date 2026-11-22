@@ -19,7 +19,7 @@
         <h3>Projets en cours</h3>
         <?php if ($projects): ?>
             <ul class="mini-list">
-                <?php foreach ($projects as $p): $pc = percent($p['raised_amount'], $p['goal_amount']); ?>
+                <?php foreach ($projects as $p): $pc = project_pct($p); ?>
                     <li><a href="<?= admin_url('projects', ['a' => 'edit', 'id' => $p['id']]) ?>"><?= e($p['title']) ?></a><span class="mini-progress"><span style="width: <?= $pc ?>%"></span></span><small><?= $pc ?> %</small></li>
                 <?php endforeach; ?>
             </ul>

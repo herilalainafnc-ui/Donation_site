@@ -55,3 +55,17 @@ CREATE TABLE IF NOT EXISTS page_views (
     UNIQUE (day, path, lang, device, referrer)
 );
 CREATE INDEX IF NOT EXISTS idx_page_views_day ON page_views (day);
+
+-- Avancement des travaux : étapes datées d'un projet, chacune avec ses photos légendées
+CREATE TABLE IF NOT EXISTS project_updates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    update_date TEXT NOT NULL, title TEXT NOT NULL, title_en TEXT, body TEXT, body_en TEXT,
+    progress INTEGER NOT NULL DEFAULT 0, is_published INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, updated_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_updates_project ON project_updates (project_id, update_date);
+CREATE TABLE IF NOT EXISTS update_images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    update_id INTEGER NOT NULL REFERENCES project_updates(id) ON DELETE CASCADE,
+    path TEXT NOT NULL, caption TEXT, caption_en TEXT, sort_order INTEGER NOT NULL DEFAULT 0
+);

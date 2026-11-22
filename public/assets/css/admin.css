@@ -223,3 +223,9 @@ body { background: radial-gradient(1200px 600px at 100% -10%, #eef1f8, transpare
 .stat-bar { position: absolute; inset: 0 auto 0 0; background: var(--accent-soft); z-index: 0; }
 .stat-label, .stat-bars strong { position: relative; z-index: 1; }
 .stat-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Photos d'une étape d'avancement ---------- */
+.gallery-tile input[type="text"] + input[type="text"] { margin-top: 6px; }
+.gallery-tile.needs-caption { outline: 2px solid #d92d20; outline-offset: 2px; border-radius: 6px; }
+.gallery-tile.needs-caption input[required] { border-color: #d92d20; }
+.updates-list li { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }

@@ -128,3 +128,30 @@ CREATE TABLE IF NOT EXISTS page_views (
     UNIQUE KEY uq_page_views (day, path, lang, device, referrer),
     INDEX idx_page_views_day (day)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Avancement des travaux : étapes datées d'un projet, chacune avec ses photos légendées
+CREATE TABLE IF NOT EXISTS project_updates (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    project_id  INT UNSIGNED NOT NULL,
+    update_date DATE NOT NULL,
+    title       VARCHAR(255) NOT NULL,
+    title_en    VARCHAR(255) NULL,
+    body        TEXT NULL,
+    body_en     TEXT NULL,
+    progress    INT NOT NULL DEFAULT 0,
+    is_published TINYINT(1) NOT NULL DEFAULT 1,
+    created_at  DATETIME NOT NULL,
+    updated_at  DATETIME NULL,
+    INDEX idx_updates_project (project_id, update_date),
+    CONSTRAINT fk_updates_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS update_images (
+    id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    update_id  INT UNSIGNED NOT NULL,
+    path       VARCHAR(255) NOT NULL,
+    caption    VARCHAR(255) NULL,
+    caption_en VARCHAR(255) NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    CONSTRAINT fk_update_images FOREIGN KEY (update_id) REFERENCES project_updates(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -1,7 +1,7 @@
 <?php
 $heroImg = setting('hero_image');
 $hp = $featured[0] ?? null;
-$hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
+$hpPct = $hp ? project_pct($hp) : 0;
 ?>
 <!-- Bannière plein écran -->
 <section class="hero<?= $heroImg ? ' has-image' : '' ?>" data-header="dark"<?= $heroImg ? ' style="--hero-img: url(\'' . e(media($heroImg)) . '\')"' : '' ?>>
@@ -24,7 +24,7 @@ $hpPct = $hp ? percent($hp['raised_amount'], $hp['goal_amount']) : 0;
                     <span class="badge badge-<?= e($hp['status']) ?>"><?= e(status_label($hp['status'])) ?></span>
                     <strong><?= e(loc($hp, 'title')) ?></strong>
                     <span class="progress"><span style="--pct: <?= $hpPct ?>%"></span></span>
-                    <span class="hero-project-meta"><b><?= e(money($hp['raised_amount'], project_currency($hp))) ?></b><em><?= $hpPct ?> %</em></span>
+                    <span class="hero-project-meta"><b><?= e(money(project_funded($hp), project_currency($hp))) ?></b><em><?= $hpPct ?> %</em></span>
                 </a>
             <?php endif; ?>
         </div>

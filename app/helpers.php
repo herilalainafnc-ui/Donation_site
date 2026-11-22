@@ -750,3 +750,15 @@ function money_totals(array $sums): string
     arsort($sums);
     return implode(' + ', array_map(fn($c, $v) => money($v, $c), array_keys($sums), $sums));
 }
+
+/** Total financé d'un projet : dons collectés + budget engagé par l'UAZ. */
+function project_funded(array $p): float
+{
+    return (float) ($p['raised_amount'] ?? 0) + (float) ($p['uaz_budget'] ?? 0);
+}
+
+/** Pourcentage de financement d'un projet (dons + budget UAZ). */
+function project_pct(array $p): int
+{
+    return percent(project_funded($p), $p['goal_amount'] ?? 0);
+}

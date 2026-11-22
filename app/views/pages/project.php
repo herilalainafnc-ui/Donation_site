@@ -59,7 +59,15 @@ $circ = 2 * M_PI * 54;
                     <div class="tile tile-raised">
                         <span class="tile-label"><?= icon('check', 18) ?> <?= e(__('Montant collecté')) ?></span>
                         <strong><?= e(money($dash['raised'], $cur)) ?></strong>
+                        <small class="tile-note"><?= e(__('grâce aux donateurs')) ?></small>
                     </div>
+                    <?php if ($dash['uaz'] > 0): ?>
+                        <div class="tile tile-uaz">
+                            <span class="tile-label"><?= icon('grad', 18) ?> <?= e(__('Budget de l\'UAZ')) ?></span>
+                            <strong><?= e(money($dash['uaz'], $cur)) ?></strong>
+                            <small class="tile-note"><?= e(__('engagé par l\'université')) ?></small>
+                        </div>
+                    <?php endif; ?>
                     <?php if ($hasGoal): ?>
                         <div class="tile tile-missing<?= $dash['missing'] <= 0 ? ' is-done' : '' ?>">
                             <span class="tile-label"><?= icon('target', 18) ?> <?= e(__('Reste à financer')) ?></span>
@@ -79,8 +87,18 @@ $circ = 2 * M_PI * 54;
 
             <?php if ($hasGoal): ?>
                 <div class="dash-bar">
-                    <div class="progress progress-lg"><span style="--pct: <?= $dash['pct'] ?>%"></span></div>
-                    <div class="dash-bar-legend"><span><?= e(money($dash['raised'], $cur)) ?></span><span><?= e(money($dash['goal'], $cur)) ?></span></div>
+                    <?php if ($dash['uaz'] > 0): ?>
+                        <div class="progress progress-lg progress-split" role="img" aria-label="<?= e(__('Financé à :pct %', ['pct' => $dash['pct']])) ?>">
+                            <span class="seg-uaz" style="--pct: <?= $dash['uaz_pct'] ?>%"></span><span class="seg-don" style="--pct: <?= $dash['raised_pct'] ?>%"></span>
+                        </div>
+                        <div class="dash-bar-legend">
+                            <span class="split-keys"><span><i class="key-uaz"></i><?= e(__('Budget de l\'UAZ')) ?></span><span><i class="key-don"></i><?= e(__('Dons')) ?></span></span>
+                            <span><?= e(money($dash['funded'], $cur)) ?> / <?= e(money($dash['goal'], $cur)) ?></span>
+                        </div>
+                    <?php else: ?>
+                        <div class="progress progress-lg"><span style="--pct: <?= $dash['pct'] ?>%"></span></div>
+                        <div class="dash-bar-legend"><span><?= e(money($dash['raised'], $cur)) ?></span><span><?= e(money($dash['goal'], $cur)) ?></span></div>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
 
@@ -105,11 +123,45 @@ $circ = 2 * M_PI * 54;
             <p class="section-label reveal"><b>01</b> <?= e(__('Détails du projet')) ?></p>
             <div class="prose prose-lg reveal"><?= rich_text(loc($p, 'description')) ?></div>
 
+            <?php if (!empty($updates)): ?>
+                <section class="progress-log" id="avancement" aria-labelledby="avancement-titre">
+                    <div class="progress-log-head">
+                        <h2 class="section-title small" id="avancement-titre"><?= e(__('Avancement des travaux')) ?></h2>
+                        <span class="progress-log-count"><?= e(__(':n étape(s)', ['n' => count($updates)])) ?></span>
+                    </div>
+                    <ol class="steps-timeline">
+                        <?php foreach ($updates as $u): $uPct = max(0, min(100, (int) $u['progress'])); $group = 'etape-' . (int) $u['id']; ?>
+                            <li class="tl-step reveal">
+                                <span class="tl-dot" aria-hidden="true"></span>
+                                <div class="tl-head">
+                                    <time datetime="<?= e($u['update_date']) ?>"><?= icon('calendar', 15) ?> <?= e(format_date($u['update_date'])) ?></time>
+                                    <?php if ($uPct > 0): ?><span class="tl-pct"><?= e(__('Travaux : :pct %', ['pct' => $uPct])) ?></span><?php endif; ?>
+                                </div>
+                                <h3><?= e(loc($u, 'title')) ?></h3>
+                                <?php if ($uPct > 0): ?><div class="tl-bar" aria-hidden="true"><span style="width: <?= $uPct ?>%"></span></div><?php endif; ?>
+                                <?php if (loc($u, 'body') !== ''): ?><div class="prose tl-body"><?= rich_text(loc($u, 'body')) ?></div><?php endif; ?>
+                                <?php if ($u['photos']): ?>
+                                    <div class="tl-photos<?= count($u['photos']) === 1 ? ' is-single' : '' ?>">
+                                        <?php foreach ($u['photos'] as $ph): $capt = loc($ph, 'caption') ?: loc($u, 'title'); ?>
+                                            <figure class="tl-photo">
+                                                <a href="<?= e(media($ph['path'])) ?>" data-lightbox="<?= $group ?>" data-caption="<?= e($capt) ?>">
+                                                    <img src="<?= e(media($ph['path'])) ?>" alt="<?= e($capt) ?>" loading="lazy">
+                                                </a>
+                                                <figcaption><?= e($capt) ?></figcaption>
+                                            </figure>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ol>
+                </section>
+            <?php endif; ?>
             <?php if ($images): ?>
                 <h2 class="section-title small"><?= e(__('Galerie photos')) ?></h2>
                 <div class="gallery">
                     <?php foreach ($images as $img): ?>
-                        <a href="<?= e(media($img['path'])) ?>" class="gallery-item" data-lightbox data-caption="<?= e($img['caption']) ?>">
+                        <a href="<?= e(media($img['path'])) ?>" class="gallery-item" data-lightbox="galerie" data-caption="<?= e($img['caption']) ?>">
                             <img src="<?= e(media($img['path'])) ?>" alt="<?= e($img['caption'] ?: loc($p, 'title')) ?>" loading="lazy">
                             <?php if ($img['caption']): ?><span><?= e($img['caption']) ?></span><?php endif; ?>
                         </a>
@@ -128,7 +180,8 @@ $circ = 2 * M_PI * 54;
                     <?php if ($p['start_date']): ?><div><dt><?= e(__('Début')) ?></dt><dd><?= e(format_date($p['start_date'])) ?></dd></div><?php endif; ?>
                     <?php if ($p['end_date']): ?><div><dt><?= e($isDone ? __('Achèvement') : __('Fin prévue')) ?></dt><dd><?= e(format_date($p['end_date'])) ?></dd></div><?php endif; ?>
                     <?php if ($hasGoal): ?><div><dt><?= e(__('Objectif')) ?></dt><dd><?= e(money($dash['goal'], $cur)) ?></dd></div><?php endif; ?>
-                    <div><dt><?= e(__('Collecté')) ?></dt><dd><?= e(money($dash['raised'], $cur)) ?></dd></div>
+                    <?php if ($dash['uaz'] > 0): ?><div><dt><?= e(__('Budget de l\'UAZ')) ?></dt><dd><?= e(money($dash['uaz'], $cur)) ?></dd></div><?php endif; ?>
+                    <div><dt><?= e(__('Collecté (dons)')) ?></dt><dd><?= e(money($dash['raised'], $cur)) ?></dd></div>
                     <div><dt><?= e(__('Mise à jour')) ?></dt><dd><?= e(format_date($p['updated_at'] ?: $p['created_at'])) ?></dd></div>
                 </dl>
                 <?php if (!$isDone): ?>

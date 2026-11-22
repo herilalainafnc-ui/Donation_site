@@ -5,12 +5,12 @@
         <?php if (!empty($ent['filter'])): ?>
             <select name="f" onchange="this.form.submit()">
                 <option value="">Tous</option>
-                <?php foreach ($ent['filter'][1] as $k => $lbl): ?><option value="<?= e($k) ?>" <?= $filter === $k ? 'selected' : '' ?>><?= e($lbl) ?></option><?php endforeach; ?>
+                <?php foreach ($ent['filter'][1] as $k => $lbl): ?><option value="<?= e($k) ?>" <?= $filter === (string) $k ? 'selected' : '' ?>><?= e($lbl) ?></option><?php endforeach; ?>
             </select>
         <?php endif; ?>
         <?php if (!empty($ent['search'])): ?><button class="btn btn-light" type="submit">Filtrer</button><?php endif; ?>
     </form>
-    <a class="btn btn-primary" href="<?= admin_url($key, ['a' => 'new']) ?>">+ Ajouter <?= e($ent['singular']) ?></a>
+    <a class="btn btn-primary" href="<?= admin_url($key, ['a' => 'new'] + ($filter !== '' && !empty($ent['filter']) && $ent['filter'][0] === 'project_id' ? ['project_id' => $filter] : [])) ?>">+ Ajouter <?= e($ent['singular']) ?></a>
 </div>
 
 <div class="panel table-panel">

@@ -170,11 +170,18 @@ function project_dashboard(array $p, int $donorCount): array
 {
     $goal = (float) $p['goal_amount'];
     $raised = (float) $p['raised_amount'];
+    $uaz = (float) ($p['uaz_budget'] ?? 0);
+    $funded = $raised + $uaz;
     $d = [
         'goal' => $goal,
-        'raised' => $raised,
-        'missing' => max(0, $goal - $raised),
-        'pct' => percent($raised, $goal),
+        'raised' => $raised,          // dons collectés
+        'uaz' => $uaz,                // budget engagé par l'UAZ
+        'funded' => $funded,          // total financé
+        'missing' => max(0, $goal - $funded),
+        'pct' => percent($funded, $goal),
+        // Parts de la barre (en % de l'objectif, plafonnées à 100 au total)
+        'uaz_pct' => $goal > 0 ? min(100, round($uaz / $goal * 100, 1)) : 0,
+        'raised_pct' => $goal > 0 ? max(0, min(100 - min(100, round($uaz / $goal * 100, 1)), round($raised / $goal * 100, 1))) : 0,
         'donors' => $donorCount,
         'time_pct' => null,
         'days_left' => null,
@@ -215,9 +222,24 @@ function page_project(string $slug): void
         'project' => $project,
         'dash' => project_dashboard($project, count($donors)),
         'images' => fetch_all('SELECT * FROM project_images WHERE project_id = ? ORDER BY sort_order, id', [$project['id']]),
+        'updates' => project_updates((int) $project['id']),
         'donors' => $donors,
         'others' => fetch_all('SELECT * FROM projects WHERE is_published = 1 AND id <> ? AND status <> ? ORDER BY is_featured DESC, sort_order LIMIT 3', [$project['id'], 'completed']),
     ]);
+}
+
+/** Étapes publiées de l'avancement des travaux d'un projet (la plus récente d'abord), avec leurs photos. */
+function project_updates(int $projectId): array
+{
+    try {
+        $updates = fetch_all('SELECT * FROM project_updates WHERE project_id = ? AND is_published = 1 ORDER BY update_date DESC, id DESC', [$projectId]);
+    } catch (Throwable) {
+        return []; // table pas encore créée
+    }
+    foreach ($updates as &$u) {
+        $u['photos'] = fetch_all('SELECT * FROM update_images WHERE update_id = ? ORDER BY sort_order, id', [$u['id']]);
+    }
+    return $updates;
 }
 
 /** Fiche de suivi : le PDF déposé dans l'admin s'il existe, sinon une fiche générée (téléchargeable en PDF). */
@@ -249,7 +271,7 @@ function page_project_report(string $slug): void
 function page_donor(int $id): void
 {
     $donor = fetch_one('SELECT d.*, p.title AS project_title, p.title_en AS project_title_en, p.slug AS project_slug, p.code AS project_code,
-        p.status AS project_status, p.cover_image AS project_cover, p.goal_amount AS project_goal, p.raised_amount AS project_raised
+        p.status AS project_status, p.cover_image AS project_cover, p.goal_amount AS project_goal, p.raised_amount AS project_raised, p.uaz_budget AS project_uaz
         FROM donors d LEFT JOIN projects p ON p.id = d.project_id AND p.is_published = 1 WHERE d.id = ? AND d.is_published = 1', [$id]);
     if (!$donor) {
         page_not_found();

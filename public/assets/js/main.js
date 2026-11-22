@@ -397,7 +397,8 @@
         var img = lb.querySelector('img');
         var cap = lb.querySelector('figcaption');
         var closeBtn = lb.querySelector('.lightbox-close');
-        var items = $$('[data-lightbox]');
+        var all = $$('[data-lightbox]');
+        var items = all; // photos du groupe ouvert (une étape d'avancement, la galerie…)
         var index = 0;
         var lastFocus = null;
         var label = function (key, fallback) { return lb.getAttribute('data-' + key) || fallback; };
@@ -441,8 +442,13 @@
             if (lastFocus) lastFocus.focus();
         };
 
-        items.forEach(function (a, i) {
-            a.addEventListener('click', function (ev) { ev.preventDefault(); ev.stopPropagation(); open(i); });
+        all.forEach(function (a) {
+            a.addEventListener('click', function (ev) {
+                ev.preventDefault(); ev.stopPropagation();
+                var g = a.getAttribute('data-lightbox') || '';
+                items = all.filter(function (x) { return (x.getAttribute('data-lightbox') || '') === g; });
+                open(items.indexOf(a));
+            });
         });
         closeBtn.addEventListener('click', close);
         prevBtn.addEventListener('click', function () { show(index - 1); });

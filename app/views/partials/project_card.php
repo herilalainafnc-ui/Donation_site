@@ -1,4 +1,4 @@
-<?php $pct = percent($p['raised_amount'], $p['goal_amount']); $pUrl = route_url('projects', ['slug' => $p['slug']]); ?>
+<?php $pct = project_pct($p); $pUrl = route_url('projects', ['slug' => $p['slug']]); ?>
 <article class="project-card reveal tilt">
     <a class="project-media" href="<?= $pUrl ?>" tabindex="-1" aria-hidden="true">
         <?php if ($p['cover_image']): ?>
@@ -20,7 +20,7 @@
             <div class="funding">
                 <div class="progress" role="progressbar" aria-valuenow="<?= $pct ?>" aria-valuemin="0" aria-valuemax="100" aria-label="<?= e(__('Financement')) ?>"><span style="--pct: <?= $pct ?>%"></span></div>
                 <div class="progress-legend">
-                    <span><strong><?= e(money($p['raised_amount'], project_currency($p))) ?></strong> / <?= e(money($p['goal_amount'], project_currency($p))) ?></span>
+                    <span><strong><?= e(money(project_funded($p), project_currency($p))) ?></strong> / <?= e(money($p['goal_amount'], project_currency($p))) ?></span>
                     <span><?= $pct ?> %</span>
                 </div>
             </div>

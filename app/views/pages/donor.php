@@ -57,7 +57,7 @@ $projectTitle = $d['project_slug'] ? loc(['title' => $d['project_title'], 'title
                 </div>
             <?php endif; ?>
 
-            <?php if ($projectTitle !== ''): $ppct = percent($d['project_raised'], $d['project_goal']); ?>
+            <?php if ($projectTitle !== ''): $ppct = percent((float) $d['project_raised'] + (float) $d['project_uaz'], $d['project_goal']); ?>
                 <div class="donor-project reveal">
                     <h3><?= e(__('Projet soutenu')) ?></h3>
                     <a class="donor-project-card" href="<?= route_url('projects', ['slug' => $d['project_slug']]) ?>">
@@ -67,7 +67,7 @@ $projectTitle = $d['project_slug'] ? loc(['title' => $d['project_title'], 'title
                             <strong><?= e($projectTitle) ?></strong>
                             <?php if ((float) $d['project_goal'] > 0): ?>
                                 <span class="progress"><span style="--pct: <?= $ppct ?>%"></span></span>
-                                <small><?= $ppct ?> % · <?= e(money($d['project_raised'], currency_for_project($d['project_id']))) ?> / <?= e(money($d['project_goal'], currency_for_project($d['project_id']))) ?></small>
+                                <small><?= $ppct ?> % · <?= e(money((float) $d['project_raised'] + (float) $d['project_uaz'], currency_for_project($d['project_id']))) ?> / <?= e(money($d['project_goal'], currency_for_project($d['project_id']))) ?></small>
                             <?php endif; ?>
                         </span>
                         <?= icon('arrow', 20) ?>

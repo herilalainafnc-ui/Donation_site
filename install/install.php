@@ -76,6 +76,8 @@ $newColumns = [
     ['donation_methods', 'instructions_en', 'TEXT NULL', 'TEXT'],
     // Devise propre à un projet (vide : devise générale du site)
     ['projects', 'currency', 'VARCHAR(10) NULL', 'TEXT'],
+    // Budget engagé par l'UAZ elle-même (compte dans le financement du projet)
+    ['projects', 'uaz_budget', 'DECIMAL(15,2) NOT NULL DEFAULT 0', 'REAL NOT NULL DEFAULT 0'],
 ];
 foreach ($newColumns as [$table, $column, $mysqlDef, $sqliteDef]) {
     try {

@@ -60,7 +60,9 @@ $projectUrl = rtrim((string) config('site_url', ''), '/') . route_url('projects'
             <h3><?= e(__('Financement')) ?></h3>
             <table class="kv">
                 <tr><th><?= e(__('Objectif')) ?></th><td><?= $dash['goal'] > 0 ? e(money($dash['goal'], $cur)) : '—' ?></td></tr>
-                <tr><th><?= e(__('Montant collecté')) ?></th><td class="strong"><?= e(money($dash['raised'], $cur)) ?></td></tr>
+                <?php if ($dash['uaz'] > 0): ?><tr><th><?= e(__('Budget engagé par l\'UAZ')) ?></th><td><?= e(money($dash['uaz'], $cur)) ?></td></tr><?php endif; ?>
+                <tr><th><?= e(__('Montant collecté (dons)')) ?></th><td class="strong"><?= e(money($dash['raised'], $cur)) ?></td></tr>
+                <?php if ($dash['uaz'] > 0): ?><tr><th><?= e(__('Total financé')) ?></th><td class="strong"><?= e(money($dash['funded'], $cur)) ?></td></tr><?php endif; ?>
                 <tr><th><?= e(__('Reste à financer')) ?></th><td><?= $dash['goal'] > 0 ? ($dash['missing'] > 0 ? e(money($dash['missing'], $cur)) : e(__('Objectif atteint'))) : '—' ?></td></tr>
                 <tr><th><?= e(__('Taux de financement')) ?></th><td class="strong"><?= $dash['goal'] > 0 ? $dash['pct'] . ' %' : '—' ?></td></tr>
             </table>

@@ -5,6 +5,7 @@ $unreadCount = (int) fetch_value('SELECT COUNT(*) FROM messages WHERE is_read = 
 $menu = [
     'dashboard' => ['Tableau de bord', 'target'],
     'projects' => ['Projets', 'building'],
+    'updates' => ['Avancement', 'calendar'],
     'testimonials' => ['Témoignages', 'quote'],
     'donors' => ['Donateurs', 'users'],
     'methods' => ['Moyens de don', 'bank'],
