@@ -934,3 +934,22 @@ h1 strong, h2 strong, .display strong, .display-md strong, .is-split strong .w >
 .hero-actions { margin-top: 28px; }
 .hero .scroll-cue { display: none; }
 @media (max-width: 640px) { .hero-visual { display: none; } .hero { padding-bottom: 48px; } }
+
+/* ---------- Avatars des témoignages : toujours ronds, plus grands, cadre doré ---------- */
+.avatar { flex: 0 0 auto; width: 64px; height: 64px; aspect-ratio: 1; border-radius: 50%; object-fit: cover; object-position: 50% 30%;
+    border: 3px solid #fff; box-shadow: 0 0 0 2px var(--accent-light), 0 10px 24px -10px rgba(11, 24, 52, .55); background: var(--secondary); }
+.avatar-initials { display: grid; place-items: center; background: radial-gradient(circle at 30% 25%, #2f5296, #183060 70%); color: #e8c66a;
+    font-family: var(--font-head); font-weight: 800; font-size: 1.25rem; letter-spacing: .04em; line-height: 1; text-transform: uppercase; }
+.testimonial figcaption { gap: 16px; }
+.testimonial figcaption strong { font-family: var(--font-head); font-size: 1.02rem; color: var(--ink); }
+.testimonial figcaption small { margin-top: 2px; }
+/* Accueil (fond sombre) : avatar plus grand, liseré adapté */
+.t-slide .avatar { width: 76px; height: 76px; border-color: #0d1b3a; box-shadow: 0 0 0 2px var(--accent-light), 0 14px 30px -12px rgba(0, 0, 0, .7); }
+.t-slide .avatar-initials { font-size: 1.45rem; background: radial-gradient(circle at 30% 25%, #e8c66a, #a97b23 75%); color: #18243f; }
+.t-slide figcaption { gap: 20px; }
+@media (max-width: 640px) {
+    .avatar { width: 56px; height: 56px; }
+    .avatar-initials { font-size: 1.05rem; }
+    .t-slide .avatar { width: 62px; height: 62px; }
+}
+.testimonial figcaption .avatar-initials, .t-slide figcaption .avatar-initials { display: grid; place-items: center; flex-direction: row; line-height: 1; }
