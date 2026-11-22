@@ -28,7 +28,7 @@ $fixedMethod ??= null;
         </select>
     </label>
     <div class="form-row">
-        <label><?= e(__('Montant')) ?> (<span data-pledge-currency data-default="<?= e(setting('currency', 'Ar')) ?>"><?= e(setting('currency', 'Ar')) ?></span>)<input type="text" name="amount" inputmode="numeric" maxlength="30" pattern="[0-9 .,]+" value="<?= e(old('amount')) ?>" placeholder="<?= e(__('ex. 100 000')) ?>"></label>
+        <label><span class="label-text"><?= e(__('Montant')) ?> (<span data-pledge-currency data-default="<?= e(setting('currency', 'Ar')) ?>"><?= e(setting('currency', 'Ar')) ?></span>)</span><input type="text" name="amount" inputmode="numeric" maxlength="30" pattern="[0-9 .,]+" value="<?= e(old('amount')) ?>" placeholder="<?= e(__('ex. 100 000')) ?>"></label>
         <?php if ($fixedMethod !== null): ?>
             <label><?= e(__('Moyen de don')) ?><input type="text" value="<?= e($fixedMethod) ?>" readonly><input type="hidden" name="method" value="<?= e($fixedMethod) ?>"></label>
         <?php else: ?>

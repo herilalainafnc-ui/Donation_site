@@ -1034,3 +1034,55 @@ html.lightbox-open .mobile-give, html.lightbox-open .to-top, html.lightbox-open 
     .tl-photos { grid-template-columns: 1fr 1fr; gap: 10px; }
     .tl-photos.is-single { grid-template-columns: 1fr; }
 }
+
+/* ---------- Formulaires : libellés sur une ligne, champs alignés ---------- */
+.card-form .label-text { display: inline; }
+.card-form .label-text span { text-transform: none; }
+.form-row { align-items: start; }
+.card-form input:not([type="checkbox"]):not([type="radio"]), .card-form select { min-height: 56px; }
+
+/* ---------- Tableau de bord du projet : version compacte ---------- */
+.dash { padding: clamp(20px, 2.6vw, 30px); }
+.dash-head { margin-bottom: 20px; gap: 14px; }
+.dash-head .btn { padding: 11px 18px; font-size: .86rem; }
+.dash-body { grid-template-columns: 140px 1fr; gap: clamp(18px, 3vw, 32px); }
+.dash-ring { width: 140px; }
+.ring-track, .ring-fill { stroke-width: 9; }
+.ring-label strong { font-size: 2.3rem; }
+.ring-label span { font-size: .9rem; }
+.ring-label small { margin-top: 4px; font-size: .72rem; }
+.dash-tiles { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tile { padding: 13px 15px; }
+.tile-label { font-size: .66rem; letter-spacing: .08em; margin-bottom: 6px; gap: 6px; }
+.tile-label .icon { width: 15px; height: 15px; }
+.tile strong { font-size: clamp(1rem, 1.35vw, 1.18rem); white-space: nowrap; }
+.tile-note { margin-top: 3px; font-size: .72rem; }
+.dash-bar { margin-top: 20px; }
+.dash-bar .progress-lg { height: 8px; }
+.dash-bar-legend { font-size: .78rem; }
+.dash-timeline { margin-top: 18px; padding-top: 16px; }
+.dash-section { padding-bottom: clamp(24px, 4vw, 48px); }
+@media (max-width: 1024px) {
+    .dash-body { grid-template-columns: 1fr; }
+    .dash-ring { width: 130px; }
+}
+@media (max-width: 640px) {
+    .dash-tiles { grid-template-columns: 1fr 1fr; }
+    .tile strong { white-space: normal; }
+}
+.dash-section + .section { padding-top: clamp(32px, 4vw, 56px); }
+@media (max-width: 640px) {
+    .dash { padding: 18px 16px; }
+    .dash-head { margin-bottom: 14px; }
+    .dash-head .btn { padding: 11px 14px; }
+    .dash-actions { gap: 8px; }
+    .dash-body { gap: 14px; }
+    .dash-ring { width: 108px; }
+    .ring-label strong { font-size: 1.8rem; }
+    .ring-label small { display: none; }
+    .dash-tiles { gap: 8px; }
+    .tile { padding: 11px 12px; }
+    .tile strong { font-size: .98rem; }
+    .tile-note { display: none; }
+    .dash-tiles .tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
