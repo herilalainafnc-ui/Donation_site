@@ -67,13 +67,11 @@ function expand_i18n(array $fields, array $translatable): array
             $out[$name] = $def;
             continue;
         }
-        $short = $def['type'] === 'text';
-        $fr = $def;
-        $fr['label'] = $def['label'] . ' — Français';
-        $fr['half'] = $short ?: !empty($def['half']);
-        $en = ['label' => $def['label'] . ' — English', 'type' => $def['type'], 'half' => $fr['half'], 'lang' => 'en']
+        // Les deux versions gardent la même place : les onglets Français / English n'en affichent qu'une à la fois.
+        $fr = $def + ['i18n_lang' => 'fr'];
+        $en = ['label' => $def['label'], 'type' => $def['type'], 'half' => !empty($def['half']), 'lang' => 'en', 'i18n_lang' => 'en', 'i18n_of' => $name]
             + array_intersect_key($def, array_flip(['rows']));
-        $en['help'] = 'Version anglaise (langue par défaut du site). Si vide, le texte français est affiché.';
+        $en['help'] = 'Si ce champ reste vide, le texte français est affiché sur la version anglaise du site.';
         $out[$name] = $fr;
         $out[$name . '_en'] = $en;
     }
@@ -200,6 +198,7 @@ function admin_donations(): void
     $rows = fetch_all("SELECT x.*, p.title AS project_title FROM $table x LEFT JOIN projects p ON p.id = x.project_id$sqlWhere ORDER BY x.created_at DESC, x.id DESC LIMIT 200", $params);
     $sum = fn (string $sql, array $p = []) => array_column(fetch_all($sql, $p), 'total', 'currency');
     admin_render('donations', [
+        'subtitle' => 'Paiements reçus par carte et Mobile Money, et dons réguliers.',
         'title' => 'Dons en ligne', 'nav' => 'donations', 'donView' => $view, 'rows' => $rows,
         'status' => $status, 'provider' => $provider,
         'totalAll' => $sum("SELECT currency, SUM(amount) AS total FROM donations WHERE status = 'paid' GROUP BY currency"),
@@ -226,6 +225,7 @@ function admin_stats(): void
     $group = fn(string $col, int $limit = 10) => fetch_all("SELECT $col AS label, SUM(views) n FROM page_views WHERE day >= ? GROUP BY $col ORDER BY n DESC LIMIT $limit", [$from]);
 
     admin_render('stats', [
+        'subtitle' => 'Fréquentation du site public, sans cookie ni adresse IP.',
         'title' => 'Statistiques',
         'nav' => 'stats',
         'days' => $days,
@@ -242,14 +242,51 @@ function admin_stats(): void
 
 /* ---------- Tableau de bord ---------- */
 
+/** Points à traiter, affichés sur le tableau de bord : [texte, lien, nombre]. */
+function admin_todos(): array
+{
+    $t = [];
+    $count = function (string $sql, array $p = []): int {
+        try {
+            return (int) fetch_value($sql, $p);
+        } catch (Throwable) {
+            return 0;
+        }
+    };
+    if ($n = $count('SELECT COUNT(*) FROM messages WHERE is_read = 0')) {
+        $t[] = [$n . ' message(s) non lu(s)', admin_url('messages'), 'inbox'];
+    }
+    if ($n = $count("SELECT COUNT(*) FROM projects WHERE is_published = 1 AND (title_en IS NULL OR title_en = '' OR summary_en IS NULL OR summary_en = '')")) {
+        $t[] = [$n . ' projet(s) publié(s) sans traduction anglaise (titre ou résumé)', admin_url('projects'), 'globe'];
+    }
+    if ($n = $count("SELECT COUNT(*) FROM update_images WHERE caption IS NULL OR caption = ''")) {
+        $t[] = [$n . ' photo(s) d\'avancement sans légende', admin_url('updates'), 'image'];
+    }
+    if ($n = $count("SELECT COUNT(*) FROM projects WHERE is_published = 1 AND (cover_image IS NULL OR cover_image = '')")) {
+        $t[] = [$n . ' projet(s) publié(s) sans image de couverture', admin_url('projects'), 'image'];
+    }
+    if ($n = $count("SELECT COUNT(*) FROM donation_plans WHERE status = 'active' AND next_due_date < ?", [date('Y-m-d')])) {
+        $t[] = [$n . ' don(s) régulier(s) avec une échéance en retard', admin_url('donations', ['view' => 'plans']), 'calendar'];
+    }
+    if ($n = $count("SELECT COUNT(*) FROM projects WHERE status = 'ongoing' AND is_published = 1 AND id NOT IN (SELECT project_id FROM project_updates WHERE update_date >= ?)", [date('Y-m-d', strtotime('-60 days'))])) {
+        $t[] = [$n . ' projet(s) en cours sans nouvelle étape de chantier depuis 2 mois', admin_url('updates'), 'building'];
+    }
+    return $t;
+}
+
 function admin_dashboard(): void
 {
     $byStatus = array_fill_keys(array_keys(PROJECT_STATUSES), 0);
     foreach (fetch_all('SELECT status, COUNT(*) n FROM projects GROUP BY status') as $r) {
         $byStatus[$r['status']] = (int) $r['n'];
     }
+    $first = explode(' ', trim((string) (admin_user()['name'] ?? '')))[0] ?? '';
     admin_render('dashboard', [
-        'title' => 'Tableau de bord',
+        'title' => 'Bonjour' . ($first !== '' ? ' ' . $first : '') . ' 👋',
+        'subtitle' => 'Voici l\'essentiel de la campagne de dons au ' . format_date(date('Y-m-d')) . '.',
+        'headerActions' => '<a class="btn btn-light" href="' . e(admin_url('updates', ['a' => 'new'])) . '">' . icon('calendar', 17) . ' Nouvelle étape de chantier</a>'
+            . '<a class="btn btn-primary" href="' . e(admin_url('projects', ['a' => 'new'])) . '">' . icon('plus', 18) . ' Nouveau projet</a>',
+        'todos' => admin_todos(),
         'byStatus' => $byStatus,
         // Totaux par devise : chaque projet peut avoir sa propre devise
         'raised' => sum_by_currency(fetch_all('SELECT raised_amount, currency FROM projects'), 'raised_amount'),
@@ -317,8 +354,11 @@ function admin_crud(string $key, array $ent, string $a): void
             $values = array_merge($values, $old);
             clear_old();
         }
+        $rowTitle = $row ? trim((string) ($row[$ent['title_column'] ?? 'title'] ?? $row['name'] ?? '')) : '';
         admin_render('form', [
-            'title' => ($row ? 'Modifier ' : 'Ajouter ') . $ent['singular'],
+            'title' => $row ? ($rowTitle !== '' ? $rowTitle : 'Modifier ' . $ent['singular']) : 'Ajouter ' . $ent['singular'],
+            'subtitle' => $row ? 'Modifier ' . $ent['singular'] : '',
+            'crumbs' => [$ent['label'] => admin_url($key)],
             'key' => $key, 'ent' => $ent, 'row' => $row, 'values' => $values, 'fromOld' => $fromOld,
             'images' => (!empty($ent['gallery']) && $row) ? fetch_all('SELECT * FROM ' . gallery_conf($ent)['table'] . ' WHERE ' . gallery_conf($ent)['fk'] . ' = ? ORDER BY sort_order, id', [$row['id']]) : [],
             'gallery' => !empty($ent['gallery']) ? gallery_conf($ent) : null,
@@ -354,7 +394,10 @@ function admin_crud(string $key, array $ent, string $a): void
             $options[$col] = field_options($ent['fields'][$col]);
         }
     }
+    $newUrl = admin_url($key, ['a' => 'new'] + ($filter !== '' && !empty($ent['filter']) && $ent['filter'][0] === 'project_id' ? ['project_id' => $filter] : []));
     admin_render('list', [
+        'subtitle' => $ent['description'] ?? '',
+        'headerActions' => '<a class="btn btn-primary" href="' . e($newUrl) . '">' . icon('plus', 18) . ' Ajouter ' . e($ent['singular']) . '</a>',
         'title' => $ent['label'], 'key' => $key, 'ent' => $ent, 'rows' => $rows, 'options' => $options,
         'total' => $total, 'page' => $page, 'pages' => (int) ceil($total / ADMIN_PER_PAGE),
         'search' => $search, 'filter' => $filter, 'nav' => $key,
@@ -649,7 +692,7 @@ function admin_settings(): void
         }
         redirect(admin_url('settings', ['tab' => $tab]));
     }
-    admin_render('settings', ['title' => 'Paramètres du site', 'schema' => $schema, 'tab' => $tab, 'values' => settings(), 'nav' => 'settings']);
+    admin_render('settings', ['subtitle' => 'Textes, images et réglages affichés sur le site public.', 'title' => 'Paramètres du site', 'schema' => $schema, 'tab' => $tab, 'values' => settings(), 'nav' => 'settings']);
 }
 
 /* ---------- Messages ---------- */
@@ -685,7 +728,7 @@ function admin_messages(string $a): void
         if (!$msg['is_read']) {
             q('UPDATE messages SET is_read = 1 WHERE id = ?', [$id]);
         }
-        admin_render('message', ['title' => 'Message de ' . $msg['name'], 'msg' => $msg, 'nav' => 'messages']);
+        admin_render('message', ['crumbs' => ['Messages' => admin_url('messages')], 'title' => 'Message de ' . $msg['name'], 'msg' => $msg, 'nav' => 'messages']);
         return;
     }
     $kind = in_array($_GET['kind'] ?? '', ['pledge', 'contact'], true) ? $_GET['kind'] : '';
@@ -695,7 +738,7 @@ function admin_messages(string $a): void
     $page = max(1, (int) ($_GET['page'] ?? 1));
     $rows = fetch_all('SELECT m.*, p.title AS project_title FROM messages m LEFT JOIN projects p ON p.id = m.project_id' . $where
         . ' ORDER BY m.created_at DESC, m.id DESC LIMIT ' . ADMIN_PER_PAGE . ' OFFSET ' . (($page - 1) * ADMIN_PER_PAGE), $params);
-    admin_render('messages', ['title' => 'Messages reçus', 'rows' => $rows, 'kind' => $kind, 'total' => $total, 'page' => $page,
+    admin_render('messages', ['subtitle' => 'Promesses de don et messages envoyés depuis le site.', 'title' => 'Messages reçus', 'rows' => $rows, 'kind' => $kind, 'total' => $total, 'page' => $page,
         'pages' => (int) ceil($total / ADMIN_PER_PAGE), 'nav' => 'messages']);
 }
 
@@ -730,7 +773,7 @@ function admin_users(string $a): void
         }
         redirect(admin_url('users'));
     }
-    admin_render('users', ['title' => 'Administrateurs', 'users' => fetch_all('SELECT id, name, email, last_login_at, created_at FROM admins ORDER BY name'), 'me' => $me, 'nav' => 'users']);
+    admin_render('users', ['subtitle' => 'Personnes autorisées à gérer le site.', 'title' => 'Administrateurs', 'users' => fetch_all('SELECT id, name, email, last_login_at, created_at FROM admins ORDER BY name'), 'me' => $me, 'nav' => 'users']);
 }
 
 function admin_account(): void
@@ -762,5 +805,5 @@ function admin_account(): void
         }
         redirect(admin_url('account'));
     }
-    admin_render('account', ['title' => 'Mon compte', 'me' => $me, 'nav' => 'account']);
+    admin_render('account', ['subtitle' => 'Votre nom, votre e-mail de connexion et votre mot de passe.', 'title' => 'Mon compte', 'me' => $me, 'nav' => 'account']);
 }

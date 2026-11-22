@@ -6,13 +6,17 @@ function admin_field(string $name, array $def, mixed $value): string
 {
     $id = 'f_' . $name;
     $type = $def['type'];
-    $label = e($def['label']) . (!empty($def['required']) ? ' <span class="req">*</span>' : '');
+    $i18n = $def['i18n_lang'] ?? null;
+    $label = e($def['label']) . (!empty($def['required']) ? ' <span class="req">*</span>' : '')
+        . ($i18n ? ' <span class="lang-tag lang-' . $i18n . '">' . strtoupper($i18n) . '</span>' : '');
     $req = !empty($def['required']) ? ' required' : '';
     $help = !empty($def['help']) ? '<small class="help">' . e($def['help']) . '</small>' : '';
     if (!empty($def['format_help'])) {
         $help .= '<small class="help">Mise en forme : laissez une ligne vide entre les paragraphes · <code>**gras**</code> · <code>## Sous-titre</code> · lignes commençant par <code>- </code> pour une liste.</small>';
     }
     $cls = 'field' . (!empty($def['half']) ? ' half' : '');
+    // Champ traduisible : repéré pour les onglets de langue (data-i18n), avec le champ français correspondant
+    $attr = $i18n ? ' data-i18n="' . $i18n . '"' . (!empty($def['i18n_of']) ? ' data-i18n-of="f_' . e($def['i18n_of']) . '"' : '') : '';
 
     switch ($type) {
         case 'heading':
@@ -41,7 +45,7 @@ function admin_field(string $name, array $def, mixed $value): string
             break;
         case 'checkbox':
             $checked = $value === null ? !empty($def['default']) : (bool) $value;
-            return '<div class="' . $cls . ' field-check"><label class="switch-label"><input type="checkbox" role="switch" name="' . $name . '" value="1"' . ($checked ? ' checked' : '') . '>'
+            return '<div class="' . $cls . ' field-check"' . $attr . '><label class="switch-label"><input type="checkbox" role="switch" name="' . $name . '" value="1"' . ($checked ? ' checked' : '') . '>'
                 . '<span class="switch" aria-hidden="true"></span><span>' . e($def['label']) . '</span></label>' . $help . '</div>';
         case 'image':
             $input = '';
@@ -66,7 +70,7 @@ function admin_field(string $name, array $def, mixed $value): string
             $input = '<input id="' . $id . '" type="' . $htmlType . '" name="' . $name . '" value="' . e($value) . '"' . $req
                 . ($type === 'slug' ? ' pattern="[a-z0-9-]*" placeholder="genere-automatiquement"' : '') . '>';
     }
-    return '<div class="' . $cls . '"><label for="' . $id . '">' . $label . '</label>' . $input . $help . '</div>';
+    return '<div class="' . $cls . '"' . $attr . '><label for="' . $id . '">' . $label . '</label>' . $input . $help . '</div>';
 }
 
 /** Valeur lisible d'une cellule dans la liste. */

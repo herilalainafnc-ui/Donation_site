@@ -7,6 +7,19 @@
     <a class="kpi" href="<?= admin_url('stats') ?>"><span class="kpi-icon"><?= icon('chart') ?></span><div><strong><?= number_format($views, 0, ',', ' ') ?></strong><small>Pages vues (30 jours)</small></div></a>
 </div>
 
+<section class="panel todo-panel">
+    <div class="panel-head"><h2><?= icon('check', 18) ?> À faire</h2><?php if (!$todos): ?><span class="pill pill-ok">Tout est à jour</span><?php endif; ?></div>
+    <?php if ($todos): ?>
+        <ul class="todo-list">
+            <?php foreach ($todos as [$text, $link, $ic]): ?>
+                <li><a href="<?= e($link) ?>"><span class="todo-icon"><?= icon($ic, 18) ?></span><span><?= e($text) ?></span><?= icon('chevron', 16) ?></a></li>
+            <?php endforeach; ?>
+        </ul>
+    <?php else: ?>
+        <p class="muted">Aucun point en attente : messages lus, traductions et légendes complètes.</p>
+    <?php endif; ?>
+</section>
+
 <div class="grid-2">
     <section class="panel">
         <div class="panel-head"><h2>Financement</h2></div>
@@ -46,11 +59,13 @@
 </div>
 
 <section class="panel">
-    <div class="panel-head"><h2>Actions rapides</h2></div>
-    <div class="quick-actions">
-        <a class="btn btn-primary" href="<?= admin_url('projects', ['a' => 'new']) ?>">+ Nouveau projet</a>
-        <a class="btn btn-light" href="<?= admin_url('donors', ['a' => 'new']) ?>">+ Ajouter un donateur</a>
-        <a class="btn btn-light" href="<?= admin_url('testimonials', ['a' => 'new']) ?>">+ Ajouter un témoignage</a>
-        <a class="btn btn-light" href="<?= admin_url('settings', ['tab' => 'home']) ?>">Modifier la page d'accueil</a>
+    <div class="panel-head"><h2>Raccourcis</h2></div>
+    <div class="shortcuts">
+        <a href="<?= admin_url('projects', ['a' => 'new']) ?>"><span><?= icon('building', 22) ?></span><strong>Nouveau projet</strong><small>Présentation, objectif, photos</small></a>
+        <a href="<?= admin_url('updates', ['a' => 'new']) ?>"><span><?= icon('calendar', 22) ?></span><strong>Étape de chantier</strong><small>Photos légendées de l'avancement</small></a>
+        <a href="<?= admin_url('donors', ['a' => 'new']) ?>"><span><?= icon('users', 22) ?></span><strong>Ajouter un donateur</strong><small>Mur des donateurs</small></a>
+        <a href="<?= admin_url('testimonials', ['a' => 'new']) ?>"><span><?= icon('quote', 22) ?></span><strong>Ajouter un témoignage</strong><small>Étudiants, partenaires</small></a>
+        <a href="<?= admin_url('settings', ['tab' => 'home']) ?>"><span><?= icon('home', 22) ?></span><strong>Page d'accueil</strong><small>Bannière, textes, citation</small></a>
+        <a href="<?= admin_url('donations') ?>"><span><?= icon('heart', 22) ?></span><strong>Dons en ligne</strong><small>Paiements et dons réguliers</small></a>
     </div>
 </section>

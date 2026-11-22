@@ -7,10 +7,12 @@
 return [
     'projects' => [
         'table' => 'projects', 'label' => 'Projets', 'singular' => 'un projet', 'icon' => 'building',
+        'description' => 'Les projets présentés sur le site : présentation, objectif, financement, photos et fiche de suivi.',
         'order' => "CASE status WHEN 'ongoing' THEN 1 WHEN 'upcoming' THEN 2 ELSE 3 END, sort_order, id DESC",
         'search' => ['title', 'location', 'code'],
         'filter' => ['status', PROJECT_STATUSES],
-        'list' => ['cover_image' => '', 'code' => 'Code', 'title' => 'Titre', 'status' => 'Statut', 'raised_amount' => 'Collecté', 'uaz_budget' => 'Budget UAZ', 'goal_amount' => 'Objectif', 'is_featured' => 'Vedette', 'is_published' => 'Publié'],
+        'list' => ['cover_image' => '', 'title' => 'Projet', 'status' => 'Statut', 'raised_amount' => 'Collecté', 'goal_amount' => 'Objectif', 'is_published' => 'Publié'],
+        'list_sub' => 'code', // affiché sous le titre dans la liste
         'title_column' => 'title',
         'gallery' => true,
         'unique' => ['code' => 'Ce code projet est déjà utilisé par un autre projet.'],
@@ -43,6 +45,7 @@ return [
     ],
     'updates' => [
         'table' => 'project_updates', 'label' => 'Avancement des travaux', 'singular' => 'une étape d\'avancement', 'icon' => 'calendar',
+        'description' => 'Les étapes du chantier de chaque projet, avec leurs photos légendées.',
         'order' => 'update_date DESC, id DESC',
         'search' => ['title', 'body'],
         'filter' => ['project_id', 'SELECT id, title FROM projects ORDER BY title'],
@@ -63,6 +66,7 @@ return [
     ],
     'testimonials' => [
         'table' => 'testimonials', 'label' => 'Témoignages', 'singular' => 'un témoignage', 'icon' => 'quote',
+        'description' => 'Paroles d\'étudiants, de diplômés et de partenaires affichées sur le site.',
         'i18n' => ['role', 'quote'],
         'order' => 'sort_order, id DESC',
         'search' => ['name', 'quote'],
@@ -78,6 +82,7 @@ return [
     ],
     'donors' => [
         'table' => 'donors', 'label' => 'Donateurs', 'singular' => 'un donateur', 'icon' => 'users',
+        'description' => 'Le mur des donateurs : personnes, entreprises, églises et fondations qui soutiennent l\'UAZ.',
         'i18n' => ['message'],
         'order' => 'sort_order, id DESC',
         'search' => ['name', 'country', 'email', 'phone'],
@@ -110,6 +115,7 @@ return [
     ],
     'methods' => [
         'table' => 'donation_methods', 'label' => 'Moyens de don', 'singular' => 'un moyen de don', 'icon' => 'bank',
+        'description' => 'Virement, Mobile Money, Western Union… : coordonnées et étapes affichées sur la page « Comment donner ».',
         'i18n' => ['title', 'description', 'details', 'instructions', 'payment_label'],
         'order' => 'sort_order, id',
         'list' => ['logo' => '', 'icon' => 'Icône', 'title' => 'Titre', 'payment_url' => 'Paiement en ligne', 'is_published' => 'Publié', 'sort_order' => 'Ordre'],
