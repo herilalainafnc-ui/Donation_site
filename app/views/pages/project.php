@@ -176,7 +176,7 @@ $circ = 2 * M_PI * 54;
 </section>
 <?php endif; ?>
 
-<div class="lightbox" hidden>
+<div class="lightbox" hidden data-prev="<?= e(__('Photo précédente')) ?>" data-next="<?= e(__('Photo suivante')) ?>" aria-label="<?= e(__('Galerie photos')) ?>">
     <button class="lightbox-close" aria-label="<?= e(__('Fermer')) ?>"><?= icon('close', 28) ?></button>
     <figure><img alt="" decoding="async"><figcaption></figcaption></figure>
 </div>

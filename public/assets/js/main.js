@@ -174,7 +174,7 @@
         $$('a[href]').forEach(function (a) {
             a.addEventListener('click', function (ev) {
                 var href = a.getAttribute('href');
-                if (!href || href.charAt(0) === '#' || a.target === '_blank' || a.hasAttribute('download')) return;
+                if (ev.defaultPrevented || !href || href.charAt(0) === '#' || a.target === '_blank' || a.hasAttribute('download') || a.hasAttribute('data-lightbox')) return;
                 if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
                 var url = new URL(a.href, location.href);
                 if (url.origin !== location.origin || /\/admin(\/|$)/.test(url.pathname)) return;
@@ -390,22 +390,86 @@
        ------------------------------------------------------------------ */
     var lb = $('.lightbox');
     if (lb) {
+        // Visionneuse : photo plein écran, navigation (flèches, clavier, balayage), compteur, fermeture claire
+        document.body.appendChild(lb); // hors de <main> : aucun parent ne peut décaler la position fixe
+        lb.setAttribute('role', 'dialog');
+        lb.setAttribute('aria-modal', 'true');
         var img = lb.querySelector('img');
         var cap = lb.querySelector('figcaption');
-        var close = function () { lb.hidden = true; img.removeAttribute('src'); if (lenis) lenis.start(); };
-        $$('[data-lightbox]').forEach(function (a) {
-            a.addEventListener('click', function (ev) {
-                ev.preventDefault();
-                img.src = a.getAttribute('href');
-                img.alt = a.getAttribute('data-caption') || '';
-                cap.textContent = a.getAttribute('data-caption') || '';
-                lb.hidden = false;
-                if (lenis) lenis.stop();
-                if (animate) gsap.fromTo(img, { scale: .9, opacity: 0 }, { scale: 1, opacity: 1, duration: .8, ease: 'expo.out' });
-            });
+        var closeBtn = lb.querySelector('.lightbox-close');
+        var items = $$('[data-lightbox]');
+        var index = 0;
+        var lastFocus = null;
+        var label = function (key, fallback) { return lb.getAttribute('data-' + key) || fallback; };
+        var mk = function (cls, html, aria) {
+            var b = document.createElement('button');
+            b.type = 'button'; b.className = cls; b.innerHTML = html; b.setAttribute('aria-label', aria);
+            lb.appendChild(b); return b;
+        };
+        var chevron = '<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        var prevBtn = mk('lightbox-nav prev', chevron, label('prev', 'Photo précédente'));
+        var nextBtn = mk('lightbox-nav next', chevron, label('next', 'Photo suivante'));
+        var counter = document.createElement('span');
+        counter.className = 'lightbox-counter';
+        lb.appendChild(counter);
+
+        var show = function (i) {
+            index = (i + items.length) % items.length;
+            var a = items[index];
+            var text = a.getAttribute('data-caption') || '';
+            img.src = a.getAttribute('href');
+            img.alt = text || (a.querySelector('img') ? a.querySelector('img').alt : '');
+            cap.textContent = text;
+            cap.hidden = !text;
+            counter.textContent = items.length > 1 ? (index + 1) + ' / ' + items.length : '';
+            if (animate) gsap.fromTo(img, { scale: .96, opacity: 0 }, { scale: 1, opacity: 1, duration: .5, ease: 'expo.out' });
+        };
+        var open = function (i) {
+            lastFocus = document.activeElement;
+            lb.classList.toggle('single', items.length < 2);
+            show(i);
+            lb.hidden = false;
+            root.classList.add('lightbox-open');
+            if (lenis) lenis.stop();
+            closeBtn.focus();
+        };
+        var close = function () {
+            lb.hidden = true;
+            img.removeAttribute('src');
+            root.classList.remove('lightbox-open');
+            if (lenis) lenis.start();
+            if (lastFocus) lastFocus.focus();
+        };
+
+        items.forEach(function (a, i) {
+            a.addEventListener('click', function (ev) { ev.preventDefault(); ev.stopPropagation(); open(i); });
         });
-        lb.addEventListener('click', function (ev) { if (ev.target !== img) close(); });
-        document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !lb.hidden) close(); });
+        closeBtn.addEventListener('click', close);
+        prevBtn.addEventListener('click', function () { show(index - 1); });
+        nextBtn.addEventListener('click', function () { show(index + 1); });
+        // Clic sur le fond (pas sur la photo ni les boutons) : fermeture
+        lb.addEventListener('click', function (ev) { if (ev.target === lb || ev.target.tagName === 'FIGURE') close(); });
+        document.addEventListener('keydown', function (ev) {
+            if (lb.hidden) return;
+            if (ev.key === 'Escape') close();
+            else if (ev.key === 'ArrowRight' && items.length > 1) show(index + 1);
+            else if (ev.key === 'ArrowLeft' && items.length > 1) show(index - 1);
+            else if (ev.key === 'Tab') { // garde le focus dans la visionneuse
+                var f = [closeBtn, prevBtn, nextBtn].filter(function (b) { return b.offsetParent !== null; });
+                var pos = f.indexOf(document.activeElement);
+                ev.preventDefault();
+                f[(pos + (ev.shiftKey ? f.length - 1 : 1)) % f.length].focus();
+            }
+        });
+        // Balayage sur écran tactile
+        var sx = null, sy = 0;
+        lb.addEventListener('touchstart', function (ev) { sx = ev.touches[0].clientX; sy = ev.touches[0].clientY; }, { passive: true });
+        lb.addEventListener('touchend', function (ev) {
+            if (sx === null || items.length < 2) return;
+            var dx = ev.changedTouches[0].clientX - sx, dy = ev.changedTouches[0].clientY - sy;
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) show(index + (dx < 0 ? 1 : -1));
+            sx = null;
+        });
     }
 })();
 

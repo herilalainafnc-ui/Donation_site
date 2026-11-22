@@ -80,7 +80,7 @@ $projectTitle = $d['project_slug'] ? loc(['title' => $d['project_title'], 'title
 
 <?= partial('cta') ?>
 
-<div class="lightbox" hidden>
+<div class="lightbox" hidden data-prev="<?= e(__('Photo précédente')) ?>" data-next="<?= e(__('Photo suivante')) ?>" aria-label="<?= e(__('Galerie photos')) ?>">
     <button class="lightbox-close" aria-label="<?= e(__('Fermer')) ?>"><?= icon('close', 28) ?></button>
     <figure><img alt="" decoding="async"><figcaption></figcaption></figure>
 </div>

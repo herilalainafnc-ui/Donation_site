@@ -279,6 +279,8 @@ return [
     'Gérer les cookies' => 'Manage cookies',
     'Choisir la langue' => 'Choose language',
     'En chiffres' => 'In figures',
+    'Photo précédente' => 'Previous photo',
+    'Photo suivante' => 'Next photo',
     'Projets précédents' => 'Previous projects',
     'Projets suivants' => 'Next projects',
     'Photo de :name' => 'Photo of :name',
