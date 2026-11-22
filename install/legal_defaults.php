@@ -18,7 +18,7 @@ Université Adventiste Zurcher — {address}. Contact : {email}.
 - **Données techniques** : l'adresse IP de l'expéditeur d'un formulaire est conservée temporairement pour limiter le spam.
 - **Statistiques de fréquentation** : nous comptons les pages vues de façon anonyme (page visitée, langue, type d'appareil, site de provenance), **sans cookie et sans enregistrer votre adresse IP**.
 
-Nous ne collectons **aucune donnée bancaire** : les dons sont effectués par virement, Mobile Money ou via le prestataire de paiement de votre choix, en dehors de ce site.
+Nous ne collectons **aucune donnée bancaire** : les paiements en ligne sont traités directement par des prestataires sécurisés (Stripe pour la carte bancaire, MVola et Orange Money pour le Mobile Money), qui nous transmettent seulement le résultat du paiement. Pour un don en ligne, nous conservons votre nom, votre e-mail, votre numéro de téléphone (Mobile Money), le montant, la fréquence et la référence du paiement.
 
 ## Pourquoi nous utilisons vos données
 - Vous remercier et vous envoyer un reçu si vous le demandez.
@@ -65,7 +65,7 @@ Zurcher Adventist University — {address}. Contact: {email}.
 - **Technical data**: the IP address of a form sender is kept temporarily to limit spam.
 - **Audience statistics**: we count page views anonymously (page visited, language, device type, referring site), **without cookies and without storing your IP address**.
 
-We collect **no banking data**: gifts are made by bank transfer, Mobile Money or through the payment provider of your choice, outside this website.
+We collect **no banking data**: online payments are processed directly by secure providers (Stripe for bank cards, MVola and Orange Money for Mobile Money), which only send us the result of the payment. For an online gift, we keep your name, email, phone number (Mobile Money), the amount, the frequency and the payment reference.
 
 ## Why we use your data
 - To thank you and send you a receipt if you ask for one.
@@ -110,7 +110,9 @@ Université Adventiste Zurcher — {address}. Contact : {email}.
 Le site présente les projets de construction et d'équipement de l'UAZ, explique comment les soutenir et remercie les donateurs. Il permet d'envoyer une promesse de don et un message à l'université.
 
 ## Dons
-- **Le site n'encaisse aucun paiement.** Les dons sont effectués directement par virement bancaire, Mobile Money, Western Union ou via un prestataire de paiement en ligne, selon les coordonnées indiquées sur la page « Comment donner ».
+- **Don en ligne** : les paiements sont traités par des prestataires sécurisés (Stripe, MVola, Orange Money) ; le site ne voit ni ne conserve vos données bancaires. Vous recevez une confirmation par e-mail.
+- **Don régulier** (chaque mois, tous les 3 mois ou chaque année) : par carte, chaque échéance est prélevée automatiquement ; par Mobile Money, vous recevez un e-mail de rappel avec un lien de paiement. Vous pouvez arrêter votre don régulier à tout moment grâce au lien reçu par e-mail ou en nous écrivant.
+- Les dons peuvent aussi être faits directement par virement bancaire, Mobile Money ou Western Union, selon les coordonnées indiquées sur la page « Comment donner ».
 - Une **promesse de don** envoyée par formulaire ne constitue pas un paiement : elle permet à l'université de vous remercier et d'affecter votre don.
 - Les dons sont affectés au projet que vous indiquez. Si ce projet est entièrement financé ou n'est plus réalisable, votre don est affecté au projet le plus proche ou là où le besoin est le plus grand.
 - Un reçu peut être délivré sur demande, par e-mail à {email}.
@@ -151,7 +153,9 @@ Zurcher Adventist University — {address}. Contact: {email}.
 The website presents UAZ's construction and equipment projects, explains how to support them and thanks donors. It lets you send a pledge and a message to the university.
 
 ## Gifts
-- **The website does not collect any payment.** Gifts are made directly by bank transfer, Mobile Money, Western Union or through an online payment provider, using the details shown on the "How to give" page.
+- **Online giving**: payments are processed by secure providers (Stripe, MVola, Orange Money); the website never sees or stores your banking data. You receive a confirmation by email.
+- **Regular gifts** (monthly, quarterly or yearly): by card, each payment is charged automatically; by Mobile Money, you receive a reminder email with a payment link. You can stop your regular gift at any time with the link you receive by email or by writing to us.
+- Gifts can also be made directly by bank transfer, Mobile Money or Western Union, using the details shown on the "How to give" page.
 - A **pledge** sent through the form is not a payment: it lets the university thank you and assign your gift.
 - Gifts are assigned to the project you choose. If that project is fully funded or can no longer be carried out, your gift is assigned to the closest project or where the need is greatest.
 - A receipt can be issued on request, by email to {email}.

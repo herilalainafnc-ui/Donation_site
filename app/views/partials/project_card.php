@@ -28,7 +28,7 @@
         <div class="card-actions">
             <a class="link-arrow" href="<?= $pUrl ?>"><?= e(project_cta_label($p['status'])) ?> <?= icon('arrow', 18) ?></a>
             <?php if ($p['status'] !== 'completed'): ?>
-                <a class="btn btn-outline btn-sm" href="<?= route_url('give', ['query' => ['project' => $p['slug']], 'hash' => 'promesse']) ?>"><span><?= e(__('Soutenir')) ?></span></a>
+                <a class="btn btn-outline btn-sm" href="<?= e(give_url($p['slug'])) ?>"><span><?= e(__('Soutenir')) ?></span></a>
             <?php endif; ?>
         </div>
     </div>

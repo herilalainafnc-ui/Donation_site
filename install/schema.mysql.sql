@@ -155,3 +155,74 @@ CREATE TABLE IF NOT EXISTS update_images (
     sort_order INT NOT NULL DEFAULT 0,
     CONSTRAINT fk_update_images FOREIGN KEY (update_id) REFERENCES project_updates(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Paiement en ligne : engagements de dons réguliers (mensuel, trimestriel, annuel)
+CREATE TABLE IF NOT EXISTS donation_plans (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    reference     VARCHAR(40) NOT NULL UNIQUE,
+    token         VARCHAR(64) NOT NULL UNIQUE,
+    project_id    INT UNSIGNED NULL,
+    donor_name    VARCHAR(150) NOT NULL,
+    email         VARCHAR(190) NOT NULL,
+    phone         VARCHAR(30) NULL,
+    country       VARCHAR(100) NULL,
+    amount        DECIMAL(15,2) NOT NULL,
+    currency      CHAR(3) NOT NULL,
+    provider      VARCHAR(30) NOT NULL,
+    frequency     VARCHAR(12) NOT NULL,
+    status        VARCHAR(12) NOT NULL DEFAULT 'pending',
+    lang          VARCHAR(5) NOT NULL DEFAULT 'en',
+    next_due_date DATE NULL,
+    last_paid_at  DATETIME NULL,
+    payments_count INT NOT NULL DEFAULT 0,
+    reminded_for  DATE NULL,
+    reminder_count INT NOT NULL DEFAULT 0,
+    provider_customer VARCHAR(100) NULL,
+    provider_subscription VARCHAR(100) NULL,
+    created_at    DATETIME NOT NULL,
+    updated_at    DATETIME NULL,
+    cancelled_at  DATETIME NULL,
+    INDEX idx_plans_due (status, next_due_date),
+    CONSTRAINT fk_plans_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Paiement en ligne : chaque paiement (ponctuel ou échéance d'un engagement)
+CREATE TABLE IF NOT EXISTS donations (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    reference     VARCHAR(40) NOT NULL UNIQUE,
+    plan_id       INT UNSIGNED NULL,
+    project_id    INT UNSIGNED NULL,
+    donor_name    VARCHAR(150) NOT NULL,
+    email         VARCHAR(190) NOT NULL,
+    phone         VARCHAR(30) NULL,
+    country       VARCHAR(100) NULL,
+    amount        DECIMAL(15,2) NOT NULL,
+    currency      CHAR(3) NOT NULL,
+    provider      VARCHAR(30) NOT NULL,
+    frequency     VARCHAR(12) NOT NULL DEFAULT 'once',
+    status        VARCHAR(12) NOT NULL DEFAULT 'pending',
+    provider_ref  VARCHAR(190) NULL,
+    provider_data TEXT NULL,
+    message       TEXT NULL,
+    lang          VARCHAR(5) NOT NULL DEFAULT 'en',
+    ip            VARCHAR(45) NULL,
+    added_to_project TINYINT(1) NOT NULL DEFAULT 0,
+    created_at    DATETIME NOT NULL,
+    updated_at    DATETIME NULL,
+    paid_at       DATETIME NULL,
+    INDEX idx_donations_status (status, created_at),
+    INDEX idx_donations_provider_ref (provider, provider_ref),
+    CONSTRAINT fk_donations_plan FOREIGN KEY (plan_id) REFERENCES donation_plans(id) ON DELETE SET NULL,
+    CONSTRAINT fk_donations_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Notifications reçues des prestataires (anti-doublon et traçabilité)
+CREATE TABLE IF NOT EXISTS payment_events (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    provider    VARCHAR(30) NOT NULL,
+    event_id    VARCHAR(190) NOT NULL,
+    event_type  VARCHAR(100) NULL,
+    payload     MEDIUMTEXT NULL,
+    created_at  DATETIME NOT NULL,
+    UNIQUE KEY uq_payment_events (provider, event_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

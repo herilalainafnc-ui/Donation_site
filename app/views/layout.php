@@ -131,10 +131,10 @@ $langMenu = function () {
                     </ul>
                 </li>
             </ul>
-            <a class="btn btn-gold btn-lg nav-cta" href="<?= route_url('give') ?>"><span><?= icon('heart', 20) ?> <?= e(__('Faire un don')) ?></span></a>
+            <a class="btn btn-gold btn-lg nav-cta" href="<?= e(give_url()) ?>"><span><?= icon('heart', 20) ?> <?= e(__('Faire un don')) ?></span></a>
         </nav>
         <?= $langMenu() ?>
-        <a class="btn btn-gold header-cta magnetic" href="<?= route_url('give') ?>"><span><?= icon('heart', 18) ?> <?= e(__('Faire un don')) ?></span></a>
+        <a class="btn btn-gold header-cta magnetic" href="<?= e(give_url()) ?>"><span><?= icon('heart', 18) ?> <?= e(__('Faire un don')) ?></span></a>
         <button class="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="<?= e(__('Ouvrir le menu')) ?>" data-label-open="<?= e(__('Ouvrir le menu')) ?>" data-label-close="<?= e(__('Fermer le menu')) ?>"><span></span><span></span></button>
     </div>
 </header>
@@ -154,7 +154,7 @@ $langMenu = function () {
 <footer class="site-footer" data-header="dark">
     <div class="container">
         <div class="footer-top">
-            <a class="footer-big" href="<?= route_url('give') ?>">
+            <a class="footer-big" href="<?= e(give_url()) ?>">
                 <span><?= e(__('Ensemble, bâtissons')) ?></span>
                 <span><em><?= e(__('l\'avenir')) ?></em> <?= icon('arrow', 64) ?></span>
             </a>
@@ -210,9 +210,9 @@ $langMenu = function () {
 
 <a href="#top" class="to-top" aria-label="<?= e(__('Revenir en haut de la page')) ?>"><?= icon('arrow', 20) ?></a>
 
-<?php if ($nav !== 'give'): ?>
+<?php if ($nav !== 'give' && $nav !== 'donate'): ?>
 <div class="mobile-give" data-mobile-give>
-    <a class="btn btn-gold" href="<?= route_url('give') ?>"><span><?= icon('heart', 18) ?> <?= e(__('Faire un don')) ?></span></a>
+    <a class="btn btn-gold" href="<?= e(give_url()) ?>"><span><?= icon('heart', 18) ?> <?= e(__('Faire un don')) ?></span></a>
 </div>
 <?php endif; ?>
 

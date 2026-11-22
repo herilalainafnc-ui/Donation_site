@@ -666,3 +666,103 @@ window.addEventListener('pageshow', function () {
     select.addEventListener('change', sync);
     sync();
 })();
+
+/* ------------------------------------------------------------------
+   Don en ligne : montants suggérés selon la devise, champ téléphone
+   pour le Mobile Money, libellé du bouton, suivi d'un paiement en attente
+   ------------------------------------------------------------------ */
+(function () {
+    'use strict';
+    var form = document.querySelector('[data-donate-form]');
+    if (form) {
+        var parse = function (a) { try { return JSON.parse(form.getAttribute(a)) || {}; } catch (e) { return {}; } };
+        var presets = parse('data-presets'), symbols = parse('data-symbols');
+        var lang = form.getAttribute('data-lang') || 'en';
+        var box = form.querySelector('[data-presets-box]');
+        var custom = form.querySelector('[data-custom-amount]');
+        var curSel = form.querySelector('[data-currency]');
+        var curField = form.querySelector('[data-currency-field]');
+        var symbolEl = form.querySelector('[data-currency-symbol]');
+        var phone = form.querySelector('[data-phone]');
+        var phoneLabel = form.querySelector('[data-phone-text]');
+        var phoneDefault = phoneLabel ? phoneLabel.textContent : '';
+        var label = form.querySelector('[data-submit-label]');
+        var noteRec = form.querySelector('[data-recurring-note]');
+        var noteAuto = form.querySelector('[data-auto-note]');
+        var fmt = function (v) { return new Intl.NumberFormat(lang === 'fr' ? 'fr-FR' : 'en-US', { maximumFractionDigits: 2 }).format(v); };
+        var checked = function (name) { return form.querySelector('input[name="' + name + '"]:checked'); };
+        var currency = function () {
+            var p = checked('provider');
+            return p && p.getAttribute('data-kind') === 'mobile' ? 'MGA' : (curSel ? curSel.value : 'MGA');
+        };
+        var renderPresets = function (keep) {
+            var cur = currency();
+            var prev = checked('amount');
+            var prevVal = prev ? parseFloat(prev.value) : null;
+            var list = presets[cur] || [];
+            box.innerHTML = '';
+            list.forEach(function (v, i) {
+                var l = document.createElement('label');
+                l.className = 'preset';
+                var inp = document.createElement('input');
+                inp.type = 'radio'; inp.name = 'amount'; inp.value = v;
+                inp.checked = keep && prevVal === v ? true : (!custom.value && !keep && i === Math.min(1, list.length - 1));
+                var s = document.createElement('span');
+                s.textContent = fmt(v) + ' ' + (symbols[cur] || cur);
+                l.appendChild(inp); l.appendChild(s); box.appendChild(l);
+            });
+            if (symbolEl) symbolEl.textContent = symbols[cur] || cur;
+        };
+        var update = function () {
+            var p = checked('provider');
+            var mobile = p && p.getAttribute('data-kind') === 'mobile';
+            var auto = p && p.getAttribute('data-auto') === '1';
+            if (curField) curField.hidden = mobile;
+            if (curSel && p && !mobile) {
+                var allowed = (p.getAttribute('data-currencies') || '').split(',');
+                Array.prototype.forEach.call(curSel.options, function (o) { o.disabled = allowed.indexOf(o.value) < 0; });
+            }
+            if (phone) {
+                phone.required = !!mobile;
+                if (phoneLabel) phoneLabel.textContent = mobile ? p.getAttribute('data-phone-label') + ' *' : phoneDefault;
+            }
+            var f = checked('frequency');
+            var recurring = f && f.value !== 'once';
+            if (noteRec) noteRec.hidden = !(recurring && !auto);
+            if (noteAuto) noteAuto.hidden = !(recurring && auto);
+            var a = custom.value ? parseFloat(custom.value.replace(/[\s  ]/g, '').replace(',', '.')) : (checked('amount') ? parseFloat(checked('amount').value) : 0);
+            var cur = currency();
+            var amountTxt = a > 0 ? fmt(a) + ' ' + (symbols[cur] || cur) : '';
+            var tpl = recurring ? form.getAttribute('data-label-recurring') : form.getAttribute('data-label-once');
+            label.textContent = tpl.replace(':amount', amountTxt).replace(':freq', recurring ? f.getAttribute('data-freq-label') : '').replace(/\s+/g, ' ').trim();
+        };
+        form.addEventListener('change', function (ev) {
+            var n = ev.target.name;
+            if (n === 'provider' || n === 'currency') renderPresets(n === 'provider');
+            if (n === 'amount') custom.value = '';
+            update();
+        });
+        custom.addEventListener('input', function () {
+            if (custom.value) Array.prototype.forEach.call(form.querySelectorAll('input[name="amount"]'), function (r) { r.checked = false; });
+            update();
+        });
+        form.addEventListener('submit', function (ev) {
+            if (!custom.value && !checked('amount')) { ev.preventDefault(); custom.focus(); }
+        });
+        update();
+    }
+
+    // Page d'attente : interroge le statut toutes les 4 secondes (10 minutes au plus), recharge quand il change.
+    var poll = document.querySelector('[data-poll]');
+    if (poll) {
+        var tries = 0;
+        var tick = function () {
+            tries++;
+            fetch(poll.getAttribute('data-poll'), { headers: { Accept: 'application/json' }, cache: 'no-store' })
+                .then(function (r) { return r.json(); })
+                .then(function (j) { if (j.status && j.status !== 'pending') location.reload(); else if (tries < 150) setTimeout(tick, 4000); })
+                .catch(function () { if (tries < 150) setTimeout(tick, 6000); });
+        };
+        setTimeout(tick, 3000);
+    }
+})();

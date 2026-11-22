@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once APP . '/donate.php';
+
 const STATUS_FILTERS = ['ongoing', 'upcoming', 'completed'];
 // Anciennes valeurs françaises des filtres (liens déjà partagés).
 const LEGACY_STATUS = ['en-cours' => 'ongoing', 'a-venir' => 'upcoming', 'acheves' => 'completed'];
@@ -14,6 +16,11 @@ function route_public(string $path): void
     }
     if ($path === 'robots.txt') {
         serve_robots();
+        return;
+    }
+    // Notifications des prestataires de paiement et statut des paiements (sans préfixe de langue)
+    if (str_starts_with($path, 'paiement/')) {
+        route_payment_endpoint(array_slice(explode('/', $path), 1));
         return;
     }
     $segments = $path === '' ? [] : explode('/', $path);
@@ -68,6 +75,7 @@ function dispatch_page(string $name, ?string $sub, bool $report = false): void
         $ok = match ($name) {
             'projects' => preg_match('/^[a-z0-9-]+$/', $sub) === 1,
             'donors', 'give' => ctype_digit($sub) && !$report,
+            'donate' => donate_sub($sub) !== null && !$report,
             default => false,
         };
         if (!$ok) {
@@ -78,6 +86,7 @@ function dispatch_page(string $name, ?string $sub, bool $report = false): void
             'projects' => $report ? page_project_report($sub) : page_project($sub),
             'donors'   => page_donor((int) $sub),
             'give'     => page_method((int) $sub),
+            'donate'   => page_donate($sub),
         };
         return;
     }
@@ -95,6 +104,7 @@ function dispatch_page(string $name, ?string $sub, bool $report = false): void
         'contact'      => page_contact(),
         'privacy'      => page_legal('privacy'),
         'terms'        => page_legal('terms'),
+        'donate'       => page_donate(null),
     };
 }
 

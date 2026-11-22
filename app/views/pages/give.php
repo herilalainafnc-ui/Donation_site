@@ -2,7 +2,12 @@
 
 <section class="section">
     <div class="container">
-        <?php if (setting('online_donation_url')): ?>
+        <?php if (online_payments_enabled()): ?>
+            <div class="online-give-cta reveal">
+                <div><h2><?= e(__('Donner en ligne')) ?></h2><p><?= e(__('Carte bancaire ou Mobile Money, une seule fois ou chaque mois : en quelques minutes.')) ?></p></div>
+                <a class="btn btn-gold btn-lg" href="<?= e(route_url('donate', ['query' => $selected ? ['project' => $selected] : []])) ?>"><span><?= icon('heart', 20) ?> <?= e(__('Faire un don en ligne')) ?></span></a>
+            </div>
+        <?php elseif (setting('online_donation_url')): ?>
             <div class="online-give reveal">
                 <div><?= icon('globe', 32) ?><div><h2><?= e(__('Don en ligne sécurisé')) ?></h2><p><?= e(__('Donnez en quelques clics par carte bancaire, où que vous soyez.')) ?></p></div></div>
                 <a class="btn btn-gold btn-lg" href="<?= e(setting('online_donation_url')) ?>" target="_blank" rel="noopener"><span><?= e(setting_t('online_donation_label', __('Donner en ligne'))) ?></span></a>

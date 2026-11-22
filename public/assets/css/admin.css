@@ -229,3 +229,9 @@ body { background: radial-gradient(1200px 600px at 100% -10%, #eef1f8, transpare
 .gallery-tile.needs-caption { outline: 2px solid #d92d20; outline-offset: 2px; border-radius: 6px; }
 .gallery-tile.needs-caption input[required] { border-color: #d92d20; }
 .updates-list li { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+/* ---------- Dons en ligne ---------- */
+.pill-danger { background: #fde8e7; color: #b42318; }
+.panel.notice { border-left: 4px solid var(--accent); background: var(--accent-soft); line-height: 1.6; }
+.toolbar.search { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.table code { font-size: .78rem; }

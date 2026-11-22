@@ -9,6 +9,7 @@ $menu = [
     'testimonials' => ['Témoignages', 'quote'],
     'donors' => ['Donateurs', 'users'],
     'methods' => ['Moyens de don', 'bank'],
+    'donations' => ['Dons en ligne', 'heart'],
     'messages' => ['Messages', 'mail'],
     'stats' => ['Statistiques', 'chart'],
     'settings' => ['Paramètres du site', 'globe'],

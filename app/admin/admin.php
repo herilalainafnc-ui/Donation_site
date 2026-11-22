@@ -89,6 +89,7 @@ function admin_not_found(): never
 
 function admin_dispatch(): void
 {
+    set_lang('fr'); // l'administration est en français (libellés et format des montants)
     header('X-Robots-Tag: noindex, nofollow');
     header('Cache-Control: no-store');
     $p = (string) ($_GET['p'] ?? 'dashboard');
@@ -116,6 +117,7 @@ function admin_dispatch(): void
     match ($p) {
         'dashboard' => admin_dashboard(),
         'stats'     => admin_stats(),
+        'donations' => admin_donations(),
         'settings'  => admin_settings(),
         'messages'  => admin_messages($a),
         'users'     => admin_users($a),
@@ -162,6 +164,50 @@ function admin_login(): void
     admin_render('login', ['error' => $error], false);
 }
 
+/* ---------- Dons en ligne ---------- */
+
+/** Paiements en ligne et dons réguliers (onglets), avec totaux par devise. */
+function admin_donations(): void
+{
+    $view = ($_GET['view'] ?? '') === 'plans' ? 'plans' : 'payments';
+    if (is_post()) {
+        csrf_verify();
+        $plan = fetch_one('SELECT * FROM donation_plans WHERE id = ?', [(int) ($_POST['plan_id'] ?? 0)]);
+        if ($plan && ($_POST['action'] ?? '') === 'cancel') {
+            try {
+                cancel_plan($plan);
+                flash('success', 'Don régulier ' . $plan['reference'] . ' arrêté.');
+            } catch (Throwable $ex) {
+                flash('error', 'Arrêt impossible chez le prestataire : ' . $ex->getMessage());
+            }
+        }
+        redirect(admin_url('donations', ['view' => 'plans']));
+    }
+    $status = (string) ($_GET['s'] ?? '');
+    $provider = (string) ($_GET['m'] ?? '');
+    $where = [];
+    $params = [];
+    if ($status !== '' && preg_match('/^[a-z]+$/', $status)) {
+        $where[] = 'x.status = ?';
+        $params[] = $status;
+    }
+    if ($provider !== '' && isset(payment_providers()[$provider])) {
+        $where[] = 'x.provider = ?';
+        $params[] = $provider;
+    }
+    $sqlWhere = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+    $table = $view === 'plans' ? 'donation_plans' : 'donations';
+    $rows = fetch_all("SELECT x.*, p.title AS project_title FROM $table x LEFT JOIN projects p ON p.id = x.project_id$sqlWhere ORDER BY x.created_at DESC, x.id DESC LIMIT 200", $params);
+    $sum = fn (string $sql, array $p = []) => array_column(fetch_all($sql, $p), 'total', 'currency');
+    admin_render('donations', [
+        'title' => 'Dons en ligne', 'nav' => 'donations', 'donView' => $view, 'rows' => $rows,
+        'status' => $status, 'provider' => $provider,
+        'totalAll' => $sum("SELECT currency, SUM(amount) AS total FROM donations WHERE status = 'paid' GROUP BY currency"),
+        'totalMonth' => $sum("SELECT currency, SUM(amount) AS total FROM donations WHERE status = 'paid' AND paid_at >= ? GROUP BY currency", [date('Y-m-01 00:00:00')]),
+        'activePlans' => (int) fetch_value("SELECT COUNT(*) FROM donation_plans WHERE status = 'active'"),
+        'monthlyPlanned' => $sum("SELECT currency, SUM(CASE frequency WHEN 'monthly' THEN amount WHEN 'quarterly' THEN amount / 3 ELSE amount / 12 END) AS total FROM donation_plans WHERE status = 'active' GROUP BY currency"),
+    ]);
+}
 /* ---------- Statistiques de fréquentation ---------- */
 
 /** Pages vues sur une période (anonymes, sans cookie). */
@@ -575,6 +621,14 @@ function admin_settings(): void
                     delete_upload(setting($name));
                     save_setting($name, $up ?: '');
                 }
+                continue;
+            }
+            if ($def['type'] === 'heading') {
+                continue;
+            }
+            if ($def['type'] === 'checkbox') {
+                // « 0 » explicite : une valeur vide reprendrait la valeur par défaut (activé)
+                save_setting($name, empty($_POST[$name]) ? '0' : '1');
                 continue;
             }
             $v = trim(str_replace("\r\n", "\n", (string) ($_POST[$name] ?? '')));

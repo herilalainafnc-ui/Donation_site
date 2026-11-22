@@ -21,6 +21,6 @@
     <div class="container narrow center reveal">
         <h2 class="section-title"><?= e(__('Vous aussi, rejoignez-les')) ?></h2>
         <p><?= e(__('Votre nom (ou celui de votre église, entreprise ou organisation) peut figurer ici. Vous pouvez aussi choisir de rester anonyme.')) ?></p>
-        <a class="btn btn-gold btn-lg" href="<?= route_url('give') ?>"><span><?= icon('heart', 20) ?> <?= e(__('Faire un don')) ?></span></a>
+        <a class="btn btn-gold btn-lg" href="<?= e(give_url()) ?>"><span><?= icon('heart', 20) ?> <?= e(__('Faire un don')) ?></span></a>
     </div>
 </section>

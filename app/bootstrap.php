@@ -28,6 +28,7 @@ if (!empty($GLOBALS['config']['debug'])) {
 
 require APP . '/helpers.php';
 require APP . '/i18n.php';
+require APP . '/payments.php';
 
 if (PHP_SAPI !== 'cli') {
     $secure = (($_SERVER['HTTPS'] ?? '') !== '' && $_SERVER['HTTPS'] !== 'off')

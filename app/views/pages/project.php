@@ -10,7 +10,7 @@ $dashTitle = match ($p['status']) {
     default => __('Le projet en un coup d\'œil'),
 };
 $reportUrl = route_url('projects', ['slug' => $p['slug'], 'report' => true, 'query' => $p['report_file'] ? [] : ['download' => 1]]);
-$giveUrl = route_url('give', ['query' => ['project' => $p['slug']], 'hash' => 'promesse']);
+$giveUrl = e(give_url($p['slug']));
 $circ = 2 * M_PI * 54;
 ?>
 <section class="page-hero project-hero<?= $p['cover_image'] ? ' has-image' : '' ?>" data-header="dark"<?= $p['cover_image'] ? ' style="--hero-img: url(\'' . e(media($p['cover_image'])) . '\')"' : '' ?>>

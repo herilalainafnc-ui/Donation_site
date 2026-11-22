@@ -158,6 +158,21 @@ $defaults += [
     'legal_updated' => date('Y-m-d'),
     'ga_measurement_id' => '',
     'og_image' => '',
+    // Paiement en ligne (les clés des prestataires restent dans app/config.php)
+    'pay_stripe_enabled' => '1',
+    'pay_mvola_enabled' => '1',
+    'pay_orange_money_enabled' => '1',
+    'pay_presets_mga' => '10000, 25000, 50000, 100000',
+    'pay_presets_other' => '10, 25, 50, 100',
+    'pay_min_mga' => '1000',
+    'pay_min_other' => '1',
+    'pay_card_currencies' => 'EUR, USD, MGA',
+    'pay_freq_monthly' => '1',
+    'pay_freq_quarterly' => '1',
+    'pay_freq_yearly' => '1',
+    'pay_add_to_project' => '1',
+    'pay_intro' => 'Par carte bancaire ou Mobile Money, une seule fois ou de façon régulière : chaque don construit l\'avenir d\'un étudiant.',
+    'pay_intro_en' => 'By card or Mobile Money, once or on a regular basis: every gift builds a student\'s future.',
 ];
 foreach ($defaults as $k => $v) {
     if (!fetch_value('SELECT COUNT(*) FROM settings WHERE skey = ?', [$k])) {

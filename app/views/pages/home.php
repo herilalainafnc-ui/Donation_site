@@ -13,7 +13,7 @@ $hpPct = $hp ? project_pct($hp) : 0;
             <h1 class="display" data-split><?= inline_format(setting_t('hero_title')) ?></h1>
             <p class="lead" data-fade><?= e(setting_t('hero_subtitle')) ?></p>
             <div class="hero-actions" data-fade>
-                <a class="btn btn-gold btn-lg magnetic" href="<?= route_url('give') ?>"><span><?= icon('heart', 20) ?> <?= e(__('Faire un don')) ?></span></a>
+                <a class="btn btn-gold btn-lg magnetic" href="<?= e(give_url()) ?>"><span><?= icon('heart', 20) ?> <?= e(__('Faire un don')) ?></span></a>
                 <a class="btn btn-line-light btn-lg magnetic" href="<?= route_url('projects') ?>"><span><?= e(__('Découvrir nos projets')) ?> <?= icon('arrow', 18) ?></span></a>
             </div>
         </div>

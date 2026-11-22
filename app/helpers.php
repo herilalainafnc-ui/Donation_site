@@ -613,11 +613,9 @@ function admin_user(): ?array
 function notify_admin(string $subject, string $body): void
 {
     $to = setting('notify_email', setting('contact_email'));
-    if (!config('mail_notifications') || !$to) {
-        return;
+    if ($to) {
+        send_mail($to, $subject, $body); // SMTP si configuré (app/mailer.php)
     }
-    $headers = 'From: ' . config('mail_from', 'no-reply@localhost') . "\r\nContent-Type: text/plain; charset=UTF-8";
-    @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers);
 }
 
 /* ---------- Statistiques de fréquentation anonymes ---------- */
